@@ -95,7 +95,7 @@ func (authCfg *AuthConfig) Login(w http.ResponseWriter, r *http.Request) {
 		UserAuthToken: s,
 	})
 
-	utils.RespondWithJSON(w, 200, payload{
+	utils.RespondWithJSON(w, http.StatusOK, payload{
 		Token: s,
 		Email: user.UsersEmail,
 		Name:  user.UsersName,
@@ -111,5 +111,5 @@ func (authCfg *AuthConfig) Logout(w http.ResponseWriter, r *http.Request, user *
 		utils.RespondWithError(w, 500, "Server errror")
 	}
 
-	utils.RespondWithJSON(w, 200, "Logged out")
+	utils.RespondWithJSON(w, http.StatusOK, "Logged out")
 }

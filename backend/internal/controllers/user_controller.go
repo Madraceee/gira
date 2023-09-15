@@ -57,5 +57,5 @@ func (usrCfg *UserConfig) CreateNewUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	utils.RespondWithJSON(w, 201, nil)
+	utils.RespondWithJSON(w, http.StatusCreated, nil)
 }

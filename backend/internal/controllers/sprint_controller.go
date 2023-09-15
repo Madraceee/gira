@@ -112,5 +112,5 @@ func (sprintCfg *SprintConfig) UpdateSprint(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	utils.RespondWithJSON(w, http.StatusAccepted, sprint)
+	utils.RespondWithJSON(w, http.StatusOK, sprint)
 }
