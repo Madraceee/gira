@@ -37,7 +37,7 @@ func (q *Queries) CreateSprint(ctx context.Context, arg CreateSprintParams) (Spr
 }
 
 const getSprintWithOwner = `-- name: GetSprintWithOwner :one
-SELECT sprint_epic_id, epic_id , epic_owner FROM sprint
+SELECT sprint_id, epic_id , epic_owner FROM sprint
 JOIN epic
 ON sprint_epic_id = epic_id
 WHERE epic_id=$1 AND sprint_id=$2
@@ -49,15 +49,15 @@ type GetSprintWithOwnerParams struct {
 }
 
 type GetSprintWithOwnerRow struct {
-	SprintEpicID uuid.UUID
-	EpicID       uuid.UUID
-	EpicOwner    uuid.UUID
+	SprintID  int32
+	EpicID    uuid.UUID
+	EpicOwner uuid.UUID
 }
 
 func (q *Queries) GetSprintWithOwner(ctx context.Context, arg GetSprintWithOwnerParams) (GetSprintWithOwnerRow, error) {
 	row := q.db.QueryRowContext(ctx, getSprintWithOwner, arg.EpicID, arg.SprintID)
 	var i GetSprintWithOwnerRow
-	err := row.Scan(&i.SprintEpicID, &i.EpicID, &i.EpicOwner)
+	err := row.Scan(&i.SprintID, &i.EpicID, &i.EpicOwner)
 	return i, err
 }
 

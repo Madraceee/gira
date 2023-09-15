@@ -43,6 +43,7 @@ func main() {
 	routes.AuthRoutes(router, conn)
 	routes.EpicRoute(router, conn)
 	routes.SprintRoute(router, conn)
+	routes.TaskRoute(router, conn)
 
 	srv := &http.Server{
 		Handler: router,

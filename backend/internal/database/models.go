@@ -34,6 +34,19 @@ type Sprint struct {
 	SprintEndDate   time.Time
 }
 
+type Task struct {
+	TaskEpicID    uuid.UUID
+	TaskID        uuid.UUID
+	TaskName      string
+	TaskReq       string
+	TaskLog       sql.NullString
+	TaskLink      sql.NullString
+	TaskStartDate time.Time
+	TaskEndDate   sql.NullTime
+	TaskStatus    string
+	TaskSprintID  sql.NullInt32
+}
+
 type User struct {
 	UsersID            uuid.UUID
 	UsersEmail         string

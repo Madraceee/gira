@@ -10,7 +10,7 @@ WHERE sprint_epic_id=$1 AND sprint_id=$2
 RETURNING *;
 
 -- name: GetSprintWithOwner :one
-SELECT sprint_epic_id, epic_id , epic_owner FROM sprint
+SELECT sprint_id, epic_id , epic_owner FROM sprint
 JOIN epic
 ON sprint_epic_id = epic_id
 WHERE epic_id=$1 AND sprint_id=$2;
