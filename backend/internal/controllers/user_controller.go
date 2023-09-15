@@ -44,12 +44,12 @@ func (usrCfg *UserConfig) CreateNewUser(w http.ResponseWriter, r *http.Request) 
 	}
 
 	_, err = usrCfg.DB.CreateUser(r.Context(), database.CreateUserParams{
-		ID:            uuid.New(),
-		Name:          params.Name,
-		Email:         params.Email,
-		AccountStatus: "ACTIVE",
-		UserType:      strings.ToUpper(params.User_type),
-		Password:      string(hashed_password),
+		UsersID:            uuid.New(),
+		UsersName:          params.Name,
+		UsersEmail:         params.Email,
+		UsersAccountStatus: "ACTIVE",
+		UsersType:          strings.ToUpper(params.User_type),
+		UsersPassword:      string(hashed_password),
 	})
 
 	if err != nil {

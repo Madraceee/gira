@@ -5,22 +5,39 @@
 package database
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
 )
 
+type Epic struct {
+	EpicID          uuid.UUID
+	EpicName        string
+	EpicDescription string
+	EpicFeatures    string
+	EpicLink        sql.NullString
+	EpicStartDate   time.Time
+	EpicEndDate     sql.NullTime
+	EpicOwner       uuid.UUID
+}
+
+type EpicMember struct {
+	EpicMembersUserID uuid.UUID
+	EpicMembersEpicID uuid.UUID
+}
+
 type User struct {
-	ID            uuid.UUID
-	Email         string
-	Name          string
-	AccountStatus string
-	UserType      string
-	Password      string
+	UsersID            uuid.UUID
+	UsersEmail         string
+	UsersName          string
+	UsersAccountStatus string
+	UsersType          string
+	UsersPassword      string
 }
 
 type UserAuth struct {
-	UserID    uuid.UUID
-	Token     string
-	Timestamp time.Time
+	UserID            uuid.UUID
+	UserAuthToken     string
+	UserAuthTimestamp time.Time
 }

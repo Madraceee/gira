@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type authHandler func(http.ResponseWriter, *http.Request, common.UserData)
+type authHandler func(http.ResponseWriter, *http.Request, *common.UserData)
 
 func MiddlewareAuth(handler authHandler, db *database.Queries) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +65,7 @@ func MiddlewareAuth(handler authHandler, db *database.Queries) http.HandlerFunc 
 				}
 			}
 
-			handler(w, r, usrData)
+			handler(w, r, &usrData)
 			return
 		}
 	}

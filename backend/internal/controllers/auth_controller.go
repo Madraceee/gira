@@ -29,6 +29,7 @@ func (authCfg *AuthConfig) Login(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 
+	// Extract email and password from body
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
 	err := decoder.Decode(&params)
@@ -37,20 +38,25 @@ func (authCfg *AuthConfig) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get user from database using email
+	// Respond with error if user not found
 	user, err := authCfg.DB.Login(r.Context(), params.Email)
 	if err != nil {
 		utils.RespondWithError(w, 401, "No User Found")
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(params.Password))
+	// Compare the passwords
+	// If not matching, return error
+	err = bcrypt.CompareHashAndPassword([]byte(user.UsersPassword), []byte(params.Password))
 	if err != nil {
 		utils.RespondWithError(w, 401, "Wrong Password")
 		return
 	}
 
-	// Fetch Existing token else generate new token
-	user_auth, err := authCfg.DB.GetUserToken(r.Context(), user.ID)
+	// Fetch Existing token
+	// If no token is available, then generate new token
+	user_auth, err := authCfg.DB.GetUserToken(r.Context(), user.UsersID)
 	if err != nil {
 		if err.Error() != "sql: no rows in result set" {
 			log.Printf("Error while fetching user_auth %v", err)
@@ -60,10 +66,10 @@ func (authCfg *AuthConfig) Login(w http.ResponseWriter, r *http.Request) {
 
 	if err == nil {
 		utils.RespondWithJSON(w, 200, payload{
-			Token: user_auth.Token,
-			Email: user.Email,
-			Name:  user.Name,
-			Role:  user.UserType,
+			Token: user_auth.UserAuthToken,
+			Email: user.UsersEmail,
+			Name:  user.UsersName,
+			Role:  user.UsersType,
 		})
 		return
 	}
@@ -71,9 +77,9 @@ func (authCfg *AuthConfig) Login(w http.ResponseWriter, r *http.Request) {
 	// Generate JWT Token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
-			"id":    user.ID.String(),
-			"email": user.Email,
-			"role":  user.UserType,
+			"id":    user.UsersID.String(),
+			"email": user.UsersEmail,
+			"role":  user.UsersType,
 		})
 
 	s, err := token.SignedString([]byte("test"))
@@ -83,20 +89,23 @@ func (authCfg *AuthConfig) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Store user token in DB for later user
 	authCfg.DB.InsertUserToken(r.Context(), database.InsertUserTokenParams{
-		UserID: user.ID,
-		Token:  s,
+		UserID:        user.UsersID,
+		UserAuthToken: s,
 	})
 
 	utils.RespondWithJSON(w, 200, payload{
 		Token: s,
-		Email: user.Email,
-		Name:  user.Name,
-		Role:  user.UserType,
+		Email: user.UsersEmail,
+		Name:  user.UsersName,
+		Role:  user.UsersType,
 	})
 }
 
-func (authCfg *AuthConfig) Logout(w http.ResponseWriter, r *http.Request, user common.UserData) {
+// Logout the user
+// Remove the token from DB
+func (authCfg *AuthConfig) Logout(w http.ResponseWriter, r *http.Request, user *common.UserData) {
 	err := authCfg.DB.DeleteUserToken(r.Context(), user.Id)
 	if err != nil {
 		utils.RespondWithError(w, 500, "Server errror")

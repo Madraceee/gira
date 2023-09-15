@@ -12,56 +12,56 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (id,email,name,account_status,user_type,password)
+INSERT INTO users (users_id,users_email,users_name,users_account_status,users_type,users_password)
 VALUES ($1,$2,$3,$4,$5,$6)
-RETURNING id, email, name, account_status, user_type, password
+RETURNING users_id, users_email, users_name, users_account_status, users_type, users_password
 `
 
 type CreateUserParams struct {
-	ID            uuid.UUID
-	Email         string
-	Name          string
-	AccountStatus string
-	UserType      string
-	Password      string
+	UsersID            uuid.UUID
+	UsersEmail         string
+	UsersName          string
+	UsersAccountStatus string
+	UsersType          string
+	UsersPassword      string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRowContext(ctx, createUser,
-		arg.ID,
-		arg.Email,
-		arg.Name,
-		arg.AccountStatus,
-		arg.UserType,
-		arg.Password,
+		arg.UsersID,
+		arg.UsersEmail,
+		arg.UsersName,
+		arg.UsersAccountStatus,
+		arg.UsersType,
+		arg.UsersPassword,
 	)
 	var i User
 	err := row.Scan(
-		&i.ID,
-		&i.Email,
-		&i.Name,
-		&i.AccountStatus,
-		&i.UserType,
-		&i.Password,
+		&i.UsersID,
+		&i.UsersEmail,
+		&i.UsersName,
+		&i.UsersAccountStatus,
+		&i.UsersType,
+		&i.UsersPassword,
 	)
 	return i, err
 }
 
 const login = `-- name: Login :one
-SELECT id, email, name, account_status, user_type, password FROM users
-WHERE email=$1
+SELECT users_id, users_email, users_name, users_account_status, users_type, users_password FROM users
+WHERE users_email=$1
 `
 
-func (q *Queries) Login(ctx context.Context, email string) (User, error) {
-	row := q.db.QueryRowContext(ctx, login, email)
+func (q *Queries) Login(ctx context.Context, usersEmail string) (User, error) {
+	row := q.db.QueryRowContext(ctx, login, usersEmail)
 	var i User
 	err := row.Scan(
-		&i.ID,
-		&i.Email,
-		&i.Name,
-		&i.AccountStatus,
-		&i.UserType,
-		&i.Password,
+		&i.UsersID,
+		&i.UsersEmail,
+		&i.UsersName,
+		&i.UsersAccountStatus,
+		&i.UsersType,
+		&i.UsersPassword,
 	)
 	return i, err
 }

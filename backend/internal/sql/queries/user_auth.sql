@@ -1,5 +1,5 @@
 -- name: InsertUserToken :exec
-INSERT INTO user_auth (user_id,token)
+INSERT INTO user_auth (user_id,user_auth_token)
 VALUES ($1,$2);
 
 -- name: GetUserToken :one
