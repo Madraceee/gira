@@ -5,6 +5,8 @@
 package database
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -15,4 +17,10 @@ type User struct {
 	AccountStatus string
 	UserType      string
 	Password      string
+}
+
+type UserAuth struct {
+	UserID    uuid.UUID
+	Token     string
+	Timestamp time.Time
 }

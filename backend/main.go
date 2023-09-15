@@ -11,8 +11,8 @@ import (
 	"github.com/go-chi/cors"
 )
 
-type ApiConfig struct{
-    DB *database.Queries
+type ApiConfig struct {
+	DB *database.Queries
 }
 
 func main() {
@@ -22,13 +22,13 @@ func main() {
 		log.Fatalf("Error while fetching env variables : %v", err.Error())
 	}
 	// Setup Connection to DB
-    conn, err := config.GetDatabaseConn(env)
+	conn, err := config.GetDatabaseConn(env)
 	if err != nil {
 		log.Fatalf("Error while getting database connection : %v", err.Error())
 	}
-    defer conn.Close()
+	defer conn.Close()
 
-    //Create Server
+	//Create Server
 	router := chi.NewRouter()
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
@@ -39,7 +39,8 @@ func main() {
 		MaxAge:           300,
 	}))
 
-    routes.UserRoute(router,conn)
+	routes.UserRoute(router, conn)
+	routes.AuthRoutes(router, conn)
 
 	srv := &http.Server{
 		Handler: router,
