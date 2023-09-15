@@ -65,6 +65,26 @@ func (q *Queries) DeleteEpic(ctx context.Context, epicID uuid.UUID) error {
 	return err
 }
 
+const getEpicFromEpicID = `-- name: GetEpicFromEpicID :one
+SELECT epic_id, epic_name, epic_description, epic_features, epic_link, epic_start_date, epic_end_date, epic_owner FROM epic WHERE epic_id=$1
+`
+
+func (q *Queries) GetEpicFromEpicID(ctx context.Context, epicID uuid.UUID) (Epic, error) {
+	row := q.db.QueryRowContext(ctx, getEpicFromEpicID, epicID)
+	var i Epic
+	err := row.Scan(
+		&i.EpicID,
+		&i.EpicName,
+		&i.EpicDescription,
+		&i.EpicFeatures,
+		&i.EpicLink,
+		&i.EpicStartDate,
+		&i.EpicEndDate,
+		&i.EpicOwner,
+	)
+	return i, err
+}
+
 const updateEpic = `-- name: UpdateEpic :exec
 UPDATE epic
 SET epic_description=$2,epic_features=$3,epic_end_date=$4

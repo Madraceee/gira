@@ -81,3 +81,134 @@ func (epicCfg *EpicConfig) CreateEpic(w http.ResponseWriter, r *http.Request, us
 
 	utils.RespondWithJSON(w, 200, epic)
 }
+
+
+
+
+func (epicCfg *EpicConfig) UpdateEpic(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+	// Allow only MASTERS to create EPIC
+	role := strings.ToUpper(user.Role)
+	if role != "MASTER" {
+		utils.RespondWithError(w, http.StatusMethodNotAllowed, "Not Authorized to create EPIC")
+	}
+
+	// Input from user to Update an EPIC
+	type parameters struct {
+        EpicID      uuid.UUID   `json:"epic_id"`
+        Description string      `json:"desc"`
+		Features    string      `json:"features"`
+		End_date    time.Time     `json:"end_date"`
+	}
+	decoder := json.NewDecoder(r.Body)
+	params := parameters{}
+	err := decoder.Decode(&params)
+	if err != nil {
+        log.Print(err)
+		utils.RespondWithError(w, 400, "Invalid Input")
+		return
+	}
+
+
+    // Make sure EPIC_ID is present
+    if params.EpicID == uuid.Nil{
+        utils.RespondWithError(w,http.StatusBadRequest,"Epic Value not given")
+        return
+    }
+
+    // Get Epic from DB
+    epic, err := epicCfg.DB.GetEpicFromEpicID(r.Context(),params.EpicID)
+    if err != nil{
+        utils.RespondWithError(w,http.StatusBadRequest, "No EPIC found")
+        return
+    }
+
+    // Check whether the user is the owner of the EPIC
+    if user.Id != epic.EpicOwner{
+        utils.RespondWithError(w,http.StatusUnauthorized,"Only Owner can update EPIC")
+        return
+    }
+
+    // Insert the updated values only 
+    if params.Description == "" {
+        params.Description = epic.EpicDescription
+    }
+    if params.Features == "" {
+        params.Features = epic.EpicFeatures
+    }
+
+    var inputEndTime sql.NullTime
+    if params.End_date.IsZero(){
+        inputEndTime.Time = epic.EpicEndDate.Time
+        inputEndTime.Valid = epic.EpicEndDate.Valid
+    }else{
+        inputEndTime.Time = params.End_date
+        inputEndTime.Valid = true
+    }
+
+    err = epicCfg.DB.UpdateEpic(r.Context(),database.UpdateEpicParams{
+        EpicID: epic.EpicID,
+        EpicDescription: params.Description,
+        EpicFeatures: params.Features,
+        EpicEndDate: inputEndTime,
+    })
+
+    if err != nil {
+		log.Printf("Error while updating EPIC %v : %v", user.Email, err.Error())
+		utils.RespondWithError(w, http.StatusBadRequest, "Input Error")
+		return
+    }
+    
+    utils.RespondWithJSON(w,http.StatusAccepted,nil)
+}
+
+
+
+func (epicCfg *EpicConfig) DeleteEpic(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+	// Allow only MASTERS to create EPIC
+	role := strings.ToUpper(user.Role)
+	if role != "MASTER" {
+		utils.RespondWithError(w, http.StatusMethodNotAllowed, "Not Authorized to create EPIC")
+	}
+
+	// Input from user to Update an EPIC
+	type parameters struct {
+        EpicID      uuid.UUID   `json:"epic_id"`
+	}
+	decoder := json.NewDecoder(r.Body)
+	params := parameters{}
+	err := decoder.Decode(&params)
+	if err != nil {
+        log.Print(err)
+		utils.RespondWithError(w, 400, "Invalid Input")
+		return
+	}
+
+
+    // Make sure EPIC_ID is present
+    if params.EpicID == uuid.Nil{
+        utils.RespondWithError(w,http.StatusBadRequest,"Epic Value not given")
+        return
+    }
+
+    // Get Epic from DB
+    epic, err := epicCfg.DB.GetEpicFromEpicID(r.Context(),params.EpicID)
+    if err != nil{
+        utils.RespondWithError(w,http.StatusBadRequest, "No EPIC found")
+        return
+    }
+
+    // Check whether the user is the owner of the EPIC
+    if user.Id != epic.EpicOwner{
+        utils.RespondWithError(w,http.StatusUnauthorized,"Only Owner can update EPIC")
+        return
+    }
+
+    err = epicCfg.DB.DeleteEpic(r.Context(),params.EpicID)
+    if err != nil{
+        log.Printf("Cannot Delete Epic %v from DB by User %v : %v",params.EpicID,user.Email,err.Error())
+        utils.RespondWithError(w,http.StatusInternalServerError,"Server Error")
+        return
+    }
+
+    utils.RespondWithJSON(w,http.StatusAccepted,nil)
+}

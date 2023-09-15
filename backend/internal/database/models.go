@@ -27,6 +27,13 @@ type EpicMember struct {
 	EpicMembersEpicID uuid.UUID
 }
 
+type Sprint struct {
+	SprintEpicID    uuid.UUID
+	SprintID        int32
+	SprintStartDate time.Time
+	SprintEndDate   time.Time
+}
+
 type User struct {
 	UsersID            uuid.UUID
 	UsersEmail         string

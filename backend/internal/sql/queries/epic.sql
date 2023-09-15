@@ -11,3 +11,6 @@ WHERE epic_id=$1;
 -- name: DeleteEpic :exec
 DELETE FROM epic
 WHERE epic_id=$1;
+
+-- name: GetEpicFromEpicID :one
+SELECT * FROM epic WHERE epic_id=$1;
