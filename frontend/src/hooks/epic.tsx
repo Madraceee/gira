@@ -20,12 +20,16 @@ export type SprintDetails = {
     SPRINTENDDATE : string,
 }
 
-// Details of the TASK displayed in the epic page (Short description)
-export type TaskDetailsShort = {
+// Details of the TASK 
+export type TaskDetails = {
     TASKID: string,
     TASKNAME : string,
+    TASKREQ: string,
+    TASKLINK: string,
+    TASKLOG: string,    
     TASKSTATUS : string,
     TASKSPRINTID : string,
+    TASKSTARTDATE : string,
     TASKENDDATE : string
 }
 
@@ -57,11 +61,18 @@ export enum TaskRoles{
 // Interface exposed to each EPIC page
 export type EpicInterface = {
     currentEpicDetails : EpicDetailsFull,
-    taskList : TaskDetailsShort[],
+    taskList : TaskDetails[],
     sprintList: SprintDetails[]
     epicRoles : EpicRoles[],
     isLoading : boolean,
     setCurrectEpicID :  Dispatch<SetStateAction<string>>,
+}
+
+
+// Type used for TaskEditor
+export type TaskEditorType = TaskDetails & {
+    perms : number[],
+    sprint : SprintDetails[]
 }
     
 
@@ -72,7 +83,7 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
     
     const [currentEpicID,setCurrectEpicID] = useState<string>("");
     const [currentEpicDetails,setCurrentEpicDetails] = useState<EpicDetailsFull>({} as EpicDetailsFull)
-    const [taskList,setTaskList] = useState<TaskDetailsShort[]>([] as TaskDetailsShort[])
+    const [taskList,setTaskList] = useState<TaskDetails[]>([] as TaskDetails[])
     const [sprintList,setSprintList] = useState<SprintDetails[]>([] as SprintDetails[])
     const [epicRoles, setEpicRoles] = useState<EpicRoles[]>([] as EpicRoles[])
     
