@@ -15,6 +15,6 @@ func AuthRoutes(r *chi.Mux, conn *sql.DB) {
 		DB: database.New(conn),
 	}
 
-	r.Get("/user/login", usrApi.Login)
-	r.Get("/user/logout", middleware.MiddlewareAuth(usrApi.Logout, usrApi.DB))
+	r.Post("/user/login", usrApi.Login)
+	r.Post("/user/logout", middleware.MiddlewareAuth(usrApi.Logout, usrApi.DB))
 }
