@@ -42,7 +42,7 @@ export type TaskDetails = {
 // SAME ORDER IS MAINTAINED IN THE DB
 // ENUM NUMBER SHOULD MATCH
 export enum EpicRoles{
-    ADDMEMBER,
+    ADDMEMBER=100,
     REMOVEMEMBER,
     ADDTASK,
     REMOVETASK,
@@ -52,12 +52,11 @@ export enum EpicRoles{
 }
 
 export enum TaskRoles{
-    ADDMEMBERS,
+    VIEW=1,
     UPDATESTATUS,
     UPDATETASKFULL, // UPDATETASKFULL includes only Log, Status, Link, SPRINTID
-    VIEW,    
-    ASSIGNSPRINT,
-    REMOVESPRINT
+    ADDMEMBERS,
+    REMOVEMEMBERS
 }
 
 
@@ -126,7 +125,6 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
             }
             setIsLoading(false)
 
-            // Get Sprint Details
             
             // Get Task List
 

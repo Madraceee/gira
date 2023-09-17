@@ -1,15 +1,23 @@
 'use client'
 import { closeModal } from "@/redux/modal/modalSlice";
+import { RootState } from "@/redux/store";
 import { logout } from "@/redux/user/userSlice";
-import { useDispatch } from "react-redux";
+import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
 
 export default function UserOptions(){
     const dispatch = useDispatch();
 
     const logoutUser = async()=>{
-        // Call logout function
-
-        // Clear State
+        const token = useSelector((state:RootState)=>state.user.token)
+        axios.get("http://localhost:8080/user/logout",{
+            headers : {
+                Authorization : `Bearer ${token}`
+            }
+        })
+        .then(()=>console.log("Logged out"))
+        .catch(err => console.log(err))
+        
         dispatch(logout())
         dispatch(closeModal())
     }

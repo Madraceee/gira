@@ -67,10 +67,10 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
             </p>
 
             <p className="w-full flex items-center gap-1"><span className={headingStyle}>Sprint ID:</span>
-                <select onChange={(e)=>setTaskSpringID(e.target.value)} defaultValue={taskCopy.TASKSPRINTID} disabled={task.perms.find((TaskRoles.ASSIGNSPRINT.valueOf)) === undefined ? false : false} className="min-w-[100px] text-right pr-2">
+                <select onChange={(e)=>setTaskSpringID(e.target.value)} defaultValue={taskCopy.TASKSPRINTID} disabled={task.perms.find((TaskRoles.UPDATETASKFULL.valueOf)) === undefined ? false : false} className="min-w-[100px] text-right pr-2">
                     {task.sprint.map((sprint,index)=>{
                         return(
-                            <option value={sprint.SPRINTNAME} key={index}>{sprint.SPRINTNAME}</option>
+                            <option value={sprint.SprintID} key={index}>{sprint.SprintID}</option>
                         )
                     })}
                 </select>
