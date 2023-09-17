@@ -15,7 +15,9 @@ func EpicRoute(r *chi.Mux, conn *sql.DB) {
 		DB: database.New(conn),
 	}
 
-	r.Post("/epic/createEpic",middleware.MiddlewareAuth(epicApi.CreateEpic,epicApi.DB))
-    r.Patch("/epic/updateEpic",middleware.MiddlewareAuth(epicApi.UpdateEpic,epicApi.DB))
-    r.Delete("/epic/deleteEpic",middleware.MiddlewareAuth(epicApi.DeleteEpic,epicApi.DB))
+	r.Post("/epic/createEpic", middleware.MiddlewareAuth(epicApi.CreateEpic, epicApi.DB))
+	r.Patch("/epic/updateEpic", middleware.MiddlewareAuth(epicApi.UpdateEpic, epicApi.DB))
+	r.Delete("/epic/deleteEpic", middleware.MiddlewareAuth(epicApi.DeleteEpic, epicApi.DB))
+	r.Get("/epic/getUserEpics", middleware.MiddlewareAuth(epicApi.GetUserEpics, epicApi.DB))
+	r.Get("/epic/getEpic/{id}", middleware.MiddlewareAuth(epicApi.GetFullEpic, epicApi.DB))
 }

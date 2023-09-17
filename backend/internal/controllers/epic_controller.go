@@ -3,6 +3,7 @@ package controllers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/common"
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/database"
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/utils"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
@@ -204,4 +206,40 @@ func (epicCfg *EpicConfig) DeleteEpic(w http.ResponseWriter, r *http.Request, us
 	}
 
 	utils.RespondWithJSON(w, http.StatusOK, nil)
+}
+
+// Get EPIC to which user belongs
+func (epicCfg *EpicConfig) GetUserEpics(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+	epics, err := epicCfg.DB.GetEpicsOfUser(r.Context(), user.Id)
+
+	if err != nil {
+		utils.RespondWithError(w, 400, fmt.Sprintf("Could not get Epics: %v", err))
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, epics)
+}
+
+// Get EPIC detail
+// Only the member of the EPIC can access
+func (epicCfg *EpicConfig) GetFullEpic(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+
+	epicID := chi.URLParam(r, "id")
+
+	parsedEpicID, err := uuid.Parse(epicID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Malformed ID")
+	}
+
+	epic, err := epicCfg.DB.GetEpic(r.Context(), database.GetEpicParams{
+		EpicMembersUserID: user.Id,
+		EpicID:            parsedEpicID,
+	})
+
+	if err != nil {
+		utils.RespondWithError(w, 400, fmt.Sprintf("Could not get Epic Date: %v", err))
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusAccepted, epic)
 }

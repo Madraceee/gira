@@ -14,3 +14,9 @@ SELECT sprint_id, epic_id , epic_owner FROM sprint
 JOIN epic
 ON sprint_epic_id = epic_id
 WHERE epic_id=$1 AND sprint_id=$2;
+
+-- name: GetSprintsOfEpic :many
+SELECT sprint_id, sprint_start_date, sprint_end_date FROM sprint
+JOIN epic_members
+ON sprint_epic_id = epic_members_epic_id
+WHERE epic_members_epic_id=$1 AND epic_members_user_id=$2;

@@ -7,9 +7,89 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
+
+const getEpic = `-- name: GetEpic :one
+SELECT epic_id, epic_name, epic_description, epic_features, epic_link, epic_start_date, epic_end_date, epic_owner, epic_members_user_id, epic_members_epic_id FROM epic
+JOIN epic_members
+ON epic_id=epic_members_epic_id
+WHERE epic_members_user_id=$1 AND epic_id=$2
+`
+
+type GetEpicParams struct {
+	EpicMembersUserID uuid.UUID
+	EpicID            uuid.UUID
+}
+
+type GetEpicRow struct {
+	EpicID            uuid.UUID
+	EpicName          string
+	EpicDescription   string
+	EpicFeatures      string
+	EpicLink          sql.NullString
+	EpicStartDate     time.Time
+	EpicEndDate       sql.NullTime
+	EpicOwner         uuid.UUID
+	EpicMembersUserID uuid.UUID
+	EpicMembersEpicID uuid.UUID
+}
+
+func (q *Queries) GetEpic(ctx context.Context, arg GetEpicParams) (GetEpicRow, error) {
+	row := q.db.QueryRowContext(ctx, getEpic, arg.EpicMembersUserID, arg.EpicID)
+	var i GetEpicRow
+	err := row.Scan(
+		&i.EpicID,
+		&i.EpicName,
+		&i.EpicDescription,
+		&i.EpicFeatures,
+		&i.EpicLink,
+		&i.EpicStartDate,
+		&i.EpicEndDate,
+		&i.EpicOwner,
+		&i.EpicMembersUserID,
+		&i.EpicMembersEpicID,
+	)
+	return i, err
+}
+
+const getEpicsOfUser = `-- name: GetEpicsOfUser :many
+SELECT epic_id,epic_name FROM epic
+JOIN epic_members
+ON epic_id=epic_members_epic_id
+WHERE epic_members_user_id=$1
+`
+
+type GetEpicsOfUserRow struct {
+	EpicID   uuid.UUID
+	EpicName string
+}
+
+func (q *Queries) GetEpicsOfUser(ctx context.Context, epicMembersUserID uuid.UUID) ([]GetEpicsOfUserRow, error) {
+	rows, err := q.db.QueryContext(ctx, getEpicsOfUser, epicMembersUserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetEpicsOfUserRow
+	for rows.Next() {
+		var i GetEpicsOfUserRow
+		if err := rows.Scan(&i.EpicID, &i.EpicName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
 
 const insertEpicMember = `-- name: InsertEpicMember :one
 INSERT INTO epic_members (epic_members_epic_id,epic_members_user_id)

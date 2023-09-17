@@ -61,6 +61,47 @@ func (q *Queries) GetSprintWithOwner(ctx context.Context, arg GetSprintWithOwner
 	return i, err
 }
 
+const getSprintsOfEpic = `-- name: GetSprintsOfEpic :many
+SELECT sprint_id, sprint_start_date, sprint_end_date FROM sprint
+JOIN epic_members
+ON sprint_epic_id = epic_members_epic_id
+WHERE epic_members_epic_id=$1 AND epic_members_user_id=$2
+`
+
+type GetSprintsOfEpicParams struct {
+	EpicMembersEpicID uuid.UUID
+	EpicMembersUserID uuid.UUID
+}
+
+type GetSprintsOfEpicRow struct {
+	SprintID        int32
+	SprintStartDate time.Time
+	SprintEndDate   time.Time
+}
+
+func (q *Queries) GetSprintsOfEpic(ctx context.Context, arg GetSprintsOfEpicParams) ([]GetSprintsOfEpicRow, error) {
+	rows, err := q.db.QueryContext(ctx, getSprintsOfEpic, arg.EpicMembersEpicID, arg.EpicMembersUserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetSprintsOfEpicRow
+	for rows.Next() {
+		var i GetSprintsOfEpicRow
+		if err := rows.Scan(&i.SprintID, &i.SprintStartDate, &i.SprintEndDate); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateSprint = `-- name: UpdateSprint :one
 UPDATE sprint
 SET sprint_end_date=$3

@@ -2,7 +2,8 @@
 
 import EpicProvider from "@/hooks/epic"
 import { AppProps } from "next/app"
-import { ReactElement } from "react"
+import { ReactElement, useEffect } from "react"
+
 
 type EpicProps = AppProps & {
     children : ReactElement

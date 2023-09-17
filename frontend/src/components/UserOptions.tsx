@@ -16,7 +16,7 @@ export default function UserOptions(){
 
     return(
         <div className="min-w-[200px] w-full flex flex-col h-[100px] p-5 justify-center items-center gap-6">
-            <button className="bg-red-400 w-full rounded-md pt-3 pb-3" onClick={()=>dispatch(closeModal())}>
+            <button className="bg-red-400 w-full rounded-md pt-3 pb-3" onClick={logoutUser}>
                 Logout
             </button>          
         </div>

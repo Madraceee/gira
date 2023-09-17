@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/common"
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/database"
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/utils"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
@@ -113,4 +115,29 @@ func (sprintCfg *SprintConfig) UpdateSprint(w http.ResponseWriter, r *http.Reque
 	}
 
 	utils.RespondWithJSON(w, http.StatusOK, sprint)
+}
+
+// Get the List of sprint for the EPIC ID
+func (sprintCfg *SprintConfig) GetSprints(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+	// Only the members should be able to see
+
+	epicID := chi.URLParam(r, "id")
+
+	parsedEpicID, err := uuid.Parse(epicID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Malformed ID")
+	}
+
+	sprints, err := sprintCfg.DB.GetSprintsOfEpic(r.Context(), database.GetSprintsOfEpicParams{
+		EpicMembersEpicID: parsedEpicID,
+		EpicMembersUserID: user.Id,
+	})
+
+	if err != nil {
+		utils.RespondWithError(w, 400, fmt.Sprintf("Could not get Sprints: %v", err))
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusAccepted, sprints)
+
 }

@@ -1,23 +1,27 @@
 'use client'
+import { RootState } from "@/redux/store";
+import axios from "axios";
 import { useRouter } from "next/router";
 import { Dispatch, ReactNode, SetStateAction, createContext, useContext, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 // Details of the EPIC in view
 export type EpicDetailsFull = {
-    EPICNAME  : string,
-    EPICDESCRIPTION : string,
-    EPICFEATURES : string,
-    EPICLINK : string,
-    EPICSTARTDATE : string,
-    EPICENDDATE : string,
-    EPICOWNER : string
+    EpicID : string,
+    EpicName  : string,
+    EpicDescription : string,
+    EpicFeatures : string,
+    EpicLink : {String : string,Valid : boolean},
+    EpicStartDate : string,
+    EpicEndDate : {Time : string,Valid : boolean},
+    EpicOwner : string
 }
 
 // Sprint Details
 export type SprintDetails = {
-    SPRINTNAME : string,
-    SPRINTSTARTDATE : string,
-    SPRINTENDDATE : string,
+    SprintID : number,
+    SprintStartDate : string,
+    SprintEndDate : string,
 }
 
 // Details of the TASK 
@@ -88,26 +92,48 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
     const [epicRoles, setEpicRoles] = useState<EpicRoles[]>([] as EpicRoles[])
     
     const [isLoading,setIsLoading] = useState<boolean>(false)
-    const [isError, setIsError] = useState<string>("")
+    const [isError, setIsError] = useState<boolean>(false)
 
+    const token = useSelector((state:RootState)=>state.user.token)
 
     useEffect(()=>{
         if(currentEpicID === ""){
             return
         }
 
-        setIsLoading(true)        
-        setTimeout(()=>{
+        const getInfo = async()=>{
+            setIsLoading(true)        
+
+            try{
+                const epicResponse = await axios.get(`http://localhost:8080/epic/getEpic/${currentEpicID}`,{
+                    headers : {
+                        Authorization: `Bearer ${token}`
+                    }
+                })                
+                setCurrentEpicDetails(epicResponse.data)
+
+                const sprintsResponse = await axios.get(`http://localhost:8080/sprint/getSprints/${currentEpicID}`,{
+                    headers : {
+                        Authorization: `Bearer ${token}`
+                    }
+                })                
+                setSprintList(sprintsResponse.data)
+
+                console.log(currentEpicDetails,sprintList)
+            }catch(err : any){
+                setIsError(true)
+                console.log(err)
+            }
             setIsLoading(false)
-        },3000)
 
-        // Get Epic Details
+            // Get Sprint Details
+            
+            // Get Task List
 
-        // Get Sprint Details
+            // Get Epic Roles
+        }
+        getInfo()
         
-        // Get Task List
-
-        // Get Epic Roles
     },[currentEpicID])
 
     return(

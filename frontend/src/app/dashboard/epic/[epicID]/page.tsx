@@ -4,7 +4,10 @@ import EpicDetails from "@/components/EpicDetails";
 import TaskEditor from "@/components/TaskEditor";
 import TaskPreview from "@/components/TaskPreview";
 import { SprintDetails, TaskDetails, TaskEditorType, useEpic } from "@/hooks/epic"
+import { RootState } from "@/redux/store";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 
 export default function Page({params} : {params : {epicID : string}}){
@@ -13,6 +16,18 @@ export default function Page({params} : {params : {epicID : string}}){
     const [isDetailsOpen,SetIsDetailsOpen] = useState<boolean>(false);
     const [isTaskEditorOpen,setIsTaskEditorOpen] = useState<boolean>(false);
     const [taskEditorContents, setTaskEditorContents] = useState<TaskEditorType>({} as TaskEditorType);
+
+
+    const token = useSelector((state:RootState)=>state.user.token) 
+
+    const isLoggedIn = useSelector((state:RootState)=>state.user.isLoggedIn)
+    const router = useRouter()
+
+    useEffect(()=>{
+        if(isLoggedIn === false){
+            router.push("/")
+        }
+    },[isLoggedIn])
 
     useEffect(()=>{
         setCurrectEpicID(params.epicID)
@@ -57,18 +72,18 @@ export default function Page({params} : {params : {epicID : string}}){
             TASKENDDATE: "2023-09-15",
             perms : [],
             sprint: [{
-                SPRINTNAME: "1",
-                SPRINTENDDATE: "2022-05-04",
-                SPRINTSTARTDATE : "2022-05-04"
+                SprintID: 1,
+                SprintStartDate: "2022-05-04",
+                SprintEndDate : "2022-05-04"
             },
             {
-                SPRINTNAME: "2",
-                SPRINTENDDATE: "2022-05-04",
-                SPRINTSTARTDATE : "2022-05-04"
+                SprintID: 2,
+                SprintStartDate: "2022-05-04",
+                SprintEndDate : "2022-05-04",
             }]
         },
         {
-            TASKID: "2",
+            TASKID: 2,
             TASKNAME: "Task 2",
             TASKREQ: "Requirement 2",
             TASKLINK: "https://example.com/task2",
@@ -79,9 +94,9 @@ export default function Page({params} : {params : {epicID : string}}){
             TASKENDDATE: "2023-09-20",
             perms: [],
             sprint: [{
-                SPRINTNAME: "1",
-                SPRINTENDDATE: "2022-05-04",
-                SPRINTSTARTDATE : "2022-05-04"
+                SprintID: 1,
+                SprintStartDate: "2022-05-04",
+                SprintEndDate : "2022-05-04"
             }]
         },
         // Add more objects as needed
@@ -92,14 +107,14 @@ export default function Page({params} : {params : {epicID : string}}){
     return(
         <div className="w-full h-full flex flex-col gap-4 p-2 pt-5">
             <div className="w-full flex flex-col md:flex-row md:justify-between">
-                <span className="text-2xl md:text-3xl lg:text-5xl font-bold text-center">{currentEpicDetails.EPICNAME}</span>
+                <span className="text-2xl md:text-3xl lg:text-5xl font-bold text-center">{currentEpicDetails.EpicName}</span>
                 <div className="flex gap-2 justify-between">
                     <button className="bg-slate-600 p-2 rounded-md text-white shadow-lg w-full">View Members</button>
                     <button className="bg-slate-600 p-2 rounded-md text-white shadow-lg w-full">Add Member</button>
                 </div>
             </div>
-            <div className="w-full" onClick={()=>SetIsDetailsOpen((state)=>!state)}>
-                <div className={`bg-black text-white flex justify-start items-center gap-3 cursor-pointer pl-2 text-3xl p-1 pr-2 rounded-t-md ${!isDetailsOpen && "rounded-b-md"}`}>
+            <div className="w-full"  >
+                <div className={`bg-black text-white flex justify-start items-center gap-3 cursor-pointer pl-2 text-3xl p-1 pr-2 rounded-t-md ${!isDetailsOpen && "rounded-b-md"}`} onClick={()=>SetIsDetailsOpen((state)=>!state)}>
                     <span>{isDetailsOpen ? "▼" : "▶"}</span>
                     <span className="" >Details</span>   
                 </div>

@@ -65,13 +65,14 @@ export default function Page(){
             }
         }
 
-        const isLoggedIn = useSelector((state:RootState)=>state.user.isLoggedIn)
-        useEffect(()=>{
-            if(isLoggedIn === false){
-                router.push("/")
-            }
-        },[])
     }
+    
+    const isLoggedIn = useSelector((state:RootState)=>state.user.isLoggedIn)
+    useEffect(()=>{
+        if(isLoggedIn === true){
+            router.push("/dashboard")
+        }
+    },[])    
     
     return (
         <>

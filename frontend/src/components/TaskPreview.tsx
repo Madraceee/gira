@@ -18,9 +18,12 @@ export default function TaskPreview({taskPreview,showTask} : {taskPreview : Task
     return(
         <div className={`${cardColor} w-full h-20 flex flex-row flex-wrap p-2 gap-2 cursor-pointer flex-grow`} onClick={()=>showTask(taskPreview.TASKID)}>
             <p className="w-full font-bold text-xl">{taskPreview.TASKNAME}</p>
-            <p className="text-sm w-1/4">Status: {taskPreview.TASKSTATUS}</p>
-            <p className="text-sm w-1/4" >{taskPreview.TASKSPRINTID !== "" && `Sprint: ${taskPreview.TASKSPRINTID}`}</p>
-            <p className="text-sm w-1/4">{taskPreview.TASKENDDATE !== "" && `End Date: ${taskPreview.TASKENDDATE}`}</p>
+            <div className="w-full flex flex-row justify-between items-center">
+                <p className="text-sm w-fit">Status: {taskPreview.TASKSTATUS}</p>
+                <p className="text-sm w-fit" >{taskPreview.TASKSPRINTID !== "" && `Sprint: ${taskPreview.TASKSPRINTID}`}</p>
+                <p className="text-sm w-fit">{taskPreview.TASKENDDATE !== "" && `End Date: ${taskPreview.TASKENDDATE}`}</p>
+            </div>
+            
         </div>
     )
 }
