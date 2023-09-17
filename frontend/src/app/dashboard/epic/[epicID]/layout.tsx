@@ -1,18 +1,20 @@
 'use client'
 
 import EpicProvider from "@/hooks/epic"
-import { AppProps } from "next/app"
 import { ReactElement, useEffect } from "react"
 
 
-type EpicProps = AppProps & {
+type EpicProps = {
     children : ReactElement
 }
 
 export default function Layout({children} : EpicProps){
     return(
-        <EpicProvider>
-            {children}
-        </EpicProvider>
+        <div className="w-full h-full">
+            <EpicProvider>
+                {children}
+            </EpicProvider>
+        </div>
+        
     )
 }

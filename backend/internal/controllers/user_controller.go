@@ -41,6 +41,12 @@ func (usrCfg *UserConfig) CreateNewUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if user.UsersEmail == params.Email && user.UsersAccountStatus == "DEACTIVE" {
+		err = bcrypt.CompareHashAndPassword([]byte(user.UsersPassword), []byte(params.Password))
+		if err != nil {
+			utils.RespondWithError(w, http.StatusBadRequest, "Account is deactivated, enter the right password to activate")
+			return
+		}
+
 		err := usrCfg.DB.ActivateAccount(r.Context(), user.UsersID)
 		if err != nil {
 			log.Printf("Cannot activate account of %v : %v", user.UsersEmail, err)
@@ -73,9 +79,10 @@ func (usrCfg *UserConfig) CreateNewUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	utils.RespondWithJSON(w, http.StatusCreated, nil)
+	utils.RespondWithJSON(w, http.StatusCreated, "Account Created")
 }
 
+// Deactivate Acc
 func (usrCfg *UserConfig) DeactivateAccount(w http.ResponseWriter, r *http.Request, user *common.UserData) {
 
 	err := usrCfg.DB.DeactivateAccount(r.Context(), user.Id)

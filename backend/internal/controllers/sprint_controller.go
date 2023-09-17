@@ -138,6 +138,6 @@ func (sprintCfg *SprintConfig) GetSprints(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	utils.RespondWithJSON(w, http.StatusAccepted, sprints)
+	utils.RespondWithJSON(w, http.StatusOK, sprints)
 
 }

@@ -5,12 +5,12 @@ RETURNING *;
 
 -- name: DeactivateAccount :exec
 UPDATE users
-SET users_account_status="DEACTIVE"
+SET users_account_status='DEACTIVE'
 WHERE users_id=$1;
 
 -- name: ActivateAccount :exec
 UPDATE users
-SET users_account_status="ACTIVE"
+SET users_account_status='ACTIVE'
 WHERE users_id=$1;
 
 

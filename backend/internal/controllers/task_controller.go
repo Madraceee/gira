@@ -73,7 +73,7 @@ func (taskCfg *TaskConfig) CreateTask(w http.ResponseWriter, r *http.Request, us
 		TaskReq:       params.Requirements,
 		TaskStartDate: params.Start_date,
 		TaskEndDate:   end_date,
-		TaskStatus:    "Not Started",
+		TaskStatus:    "NOT STARTED",
 	})
 
 	// Note: Add MASTER to TASK_ASSIGNMENT

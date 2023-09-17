@@ -3,13 +3,16 @@ import { closeModal } from "@/redux/modal/modalSlice";
 import { RootState } from "@/redux/store";
 import { logout } from "@/redux/user/userSlice";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 
 export default function UserOptions(){
     const dispatch = useDispatch();
-
+    const router = useRouter();
+    const token = useSelector((state:RootState)=>state.user.token)
+    
     const logoutUser = async()=>{
-        const token = useSelector((state:RootState)=>state.user.token)
+        
         axios.get("http://localhost:8080/user/logout",{
             headers : {
                 Authorization : `Bearer ${token}`
@@ -20,6 +23,7 @@ export default function UserOptions(){
         
         dispatch(logout())
         dispatch(closeModal())
+        router.push("/")        
     }
 
     return(

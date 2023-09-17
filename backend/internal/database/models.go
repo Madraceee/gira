@@ -22,6 +22,12 @@ type Epic struct {
 	EpicOwner       uuid.UUID
 }
 
+type EpicAssignment struct {
+	EpicAssignmentEpicID  uuid.UUID
+	EpicAssignmentUsersID uuid.UUID
+	EpicAssignmentRoleID  int32
+}
+
 type EpicMember struct {
 	EpicMembersUserID uuid.UUID
 	EpicMembersEpicID uuid.UUID
@@ -34,9 +40,16 @@ type Permission struct {
 }
 
 type Role struct {
-	RoleID     int32
-	RoleEpicID uuid.UUID
-	RoleName   string
+	RoleID       int32
+	RoleEpicID   uuid.UUID
+	RoleName     string
+	RoleCategory string
+}
+
+type RolePermission struct {
+	RolePermissionRoleID       int32
+	RolePermissionEpicID       uuid.UUID
+	RolePermissionPermissionID int32
 }
 
 type Sprint struct {

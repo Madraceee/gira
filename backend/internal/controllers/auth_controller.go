@@ -96,8 +96,9 @@ func (authCfg *AuthConfig) Login(w http.ResponseWriter, r *http.Request) {
 
 	// Store user token in DB for later user
 	authCfg.DB.InsertUserToken(r.Context(), database.InsertUserTokenParams{
-		UserID:        user.UsersID,
-		UserAuthToken: s,
+		UserID:            user.UsersID,
+		UserAuthToken:     s,
+		UserAuthTimestamp: time.Now().Add(time.Hour),
 	})
 
 	utils.RespondWithJSON(w, http.StatusOK, payload{

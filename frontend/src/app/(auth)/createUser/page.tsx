@@ -78,9 +78,12 @@ export default function Page(){
             setIsLoading(false)
             dispatch(openModal({
                 header: "",
-                children: <UserCreationSuccess />
+                children: <UserCreationSuccess 
+                            msg={response.data}
+                        />
             }))
-            console.log(response)
+            setPassword("")
+            setConfirmPassword("")
         }catch (err :any ){
             setIsLoading(false)
             if(err.response){
@@ -121,11 +124,11 @@ export default function Page(){
     )
 }
 
-function UserCreationSuccess(){
+function UserCreationSuccess({msg} : {msg : string}){
     const dispatch = useDispatch()
     return(
         <div className="max-w-md flex flex-col h-[100px] p-5 justify-center items-center gap-6">
-            <h1 className="text-white text-center">User account Created</h1>
+            <h1 className="text-white text-center">{msg}</h1>
             <Link href="/login" className="w-full" >
                 <button className="bg-green-400 w-full rounded-md" onClick={()=>dispatch(closeModal())}>
                     Go to Login

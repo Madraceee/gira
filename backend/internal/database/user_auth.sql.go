@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -34,16 +35,17 @@ func (q *Queries) GetUserToken(ctx context.Context, userID uuid.UUID) (UserAuth,
 }
 
 const insertUserToken = `-- name: InsertUserToken :exec
-INSERT INTO user_auth (user_id,user_auth_token)
-VALUES ($1,$2)
+INSERT INTO user_auth (user_id,user_auth_token,user_auth_timestamp)
+VALUES ($1,$2,$3)
 `
 
 type InsertUserTokenParams struct {
-	UserID        uuid.UUID
-	UserAuthToken string
+	UserID            uuid.UUID
+	UserAuthToken     string
+	UserAuthTimestamp time.Time
 }
 
 func (q *Queries) InsertUserToken(ctx context.Context, arg InsertUserTokenParams) error {
-	_, err := q.db.ExecContext(ctx, insertUserToken, arg.UserID, arg.UserAuthToken)
+	_, err := q.db.ExecContext(ctx, insertUserToken, arg.UserID, arg.UserAuthToken, arg.UserAuthTimestamp)
 	return err
 }

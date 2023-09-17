@@ -11,6 +11,7 @@ import (
 
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/common"
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/database"
+	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/service"
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -75,6 +76,66 @@ func (epicCfg *EpicConfig) CreateEpic(w http.ResponseWriter, r *http.Request, us
 		EpicMembersEpicID: epic.EpicID,
 		EpicMembersUserID: user.Id,
 	})
+
+	// Create Roles
+	// Master Role for EPIC(access to everything)
+	epicRole, err := epicCfg.DB.CreateMasterEpicRole(r.Context(), database.CreateMasterEpicRoleParams{
+		RoleEpicID: epic.EpicID,
+		RoleName:   "MASTER",
+	})
+
+	// Assigning Permissions to MASTER
+	permissions := []int{100, 101, 102, 103, 104, 105, 106}
+	for _, id := range permissions {
+		_, err := epicCfg.DB.EnterPerms(r.Context(), database.EnterPermsParams{
+			RolePermissionRoleID:       epicRole.RoleID,
+			RolePermissionEpicID:       epic.EpicID,
+			RolePermissionPermissionID: int32(id),
+		})
+		if err != nil {
+			continue
+		}
+	}
+
+	// Assign Owner to MASTER role
+	_, err = epicCfg.DB.AssignUserToEpicPerms(r.Context(), database.AssignUserToEpicPermsParams{
+		EpicAssignmentEpicID:  epic.EpicID,
+		EpicAssignmentRoleID:  epicRole.RoleID,
+		EpicAssignmentUsersID: user.Id,
+	})
+
+	// Create Developer and View Role Tasks
+	// For Developer
+	taskRole, err := epicCfg.DB.CreateTaskRole(r.Context(), database.CreateTaskRoleParams{
+		RoleEpicID: epic.EpicID,
+		RoleName:   "Developer",
+	})
+
+	for i := 1; i <= 5; i++ {
+		_, err := epicCfg.DB.EnterPerms(r.Context(), database.EnterPermsParams{
+			RolePermissionRoleID:       taskRole.RoleID,
+			RolePermissionEpicID:       epic.EpicID,
+			RolePermissionPermissionID: int32(i),
+		})
+		if err != nil {
+			continue
+		}
+	}
+
+	// For View
+	taskRole, err = epicCfg.DB.CreateTaskRole(r.Context(), database.CreateTaskRoleParams{
+		RoleEpicID: epic.EpicID,
+		RoleName:   "View",
+	})
+	_, err = epicCfg.DB.EnterPerms(r.Context(), database.EnterPermsParams{
+		RolePermissionRoleID:       taskRole.RoleID,
+		RolePermissionEpicID:       epic.EpicID,
+		RolePermissionPermissionID: int32(1),
+	})
+
+	if err != nil {
+		log.Printf("Error while making epic %v", err)
+	}
 
 	if err != nil {
 		utils.RespondWithError(w, 500, "Server Error")
@@ -242,4 +303,25 @@ func (epicCfg *EpicConfig) GetFullEpic(w http.ResponseWriter, r *http.Request, u
 	}
 
 	utils.RespondWithJSON(w, http.StatusAccepted, epic)
+}
+
+// Get Permissions in EPIC
+func (epicConfig *EpicConfig) GetEpicPermissions(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+
+	epicID := chi.URLParam(r, "id")
+
+	parsedEpicID, err := uuid.Parse(epicID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Malformed ID")
+	}
+
+	perms, err := service.FetchEpicPermissions(parsedEpicID, user.Id, epicConfig.DB, r.Context())
+
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Data Does not exist")
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, perms)
+	return
 }

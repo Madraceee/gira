@@ -33,10 +33,7 @@ export default function Page(){
                     }
                 })
 
-                console.log(response)
-                response.data.map((epic : EpicPreviewType)=>{
-                    setEpics([...epics,epic])
-                })
+                setEpics(response.data)
             }catch(err:any){
                 if(err.response){
                     console.log(err.response.status)
@@ -47,16 +44,15 @@ export default function Page(){
             }
         }
         getEpics() 
-    },[isLoggedIn])
+    },[])
 
     const epicBoxDesign = "w-3/4 h-[400px] lg:w-[300px] lg:h-[300px] bg-slate-400 shadow-md  cursor-pointer hover:scale-105 transition-transform ease-linear" 
     return(
         <div className="w-full h-full">
-            <p className="font-semibold text-lg p-3 pl-5">Welcome {name}</p>
             <div className="w-full h-full flex flex-col md:flex-row gap-5 p-10 flex-wrap justify-center items-center">
                 {epics.map((epic,index)=>{
                     return(
-                        <div className={`${epicBoxDesign} flex justify-center items-center p-5`} onClick={()=>router.push(`/dashboard/epic/${epic.EpicID}`)}>
+                        <div className={`${epicBoxDesign} flex justify-center items-center p-5`} onClick={()=>router.push(`/dashboard/epic/${epic.EpicID}`)} key={index}>
                             <p className="w-full text-start text-3xl font-bold">{epic.EpicName}</p>
                         </div>
                     )

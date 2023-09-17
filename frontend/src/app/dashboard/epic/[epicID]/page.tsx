@@ -1,25 +1,28 @@
 'use client'
 
 import EpicDetails from "@/components/EpicDetails";
+import TaskInput from "@/components/TaskInput";
 import TaskEditor from "@/components/TaskEditor";
 import TaskPreview from "@/components/TaskPreview";
-import { SprintDetails, TaskDetails, TaskEditorType, useEpic } from "@/hooks/epic"
+import { EpicPerms, SprintDetails, TaskDetails, TaskEditorType, useEpic } from "@/hooks/epic"
+import { openModal } from "@/redux/modal/modalSlice";
 import { RootState } from "@/redux/store";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 
 export default function Page({params} : {params : {epicID : string}}){
 
-    const {setCurrectEpicID,currentEpicDetails,taskList,sprintList} = useEpic();
+    const dipatch = useDispatch()
+    const {setCurrectEpicID,currentEpicDetails,taskList,sprintList,epicPerms} = useEpic();
     const [isDetailsOpen,SetIsDetailsOpen] = useState<boolean>(false);
     const [isTaskEditorOpen,setIsTaskEditorOpen] = useState<boolean>(false);
     const [taskEditorContents, setTaskEditorContents] = useState<TaskEditorType>({} as TaskEditorType);
+    const [showAddTask,setShowAddTask] = useState<boolean>(false)
 
 
-    const token = useSelector((state:RootState)=>state.user.token) 
-
+    const token = useSelector((state:RootState)=>state.user.token)
     const isLoggedIn = useSelector((state:RootState)=>state.user.isLoggedIn)
     const router = useRouter()
 
@@ -59,64 +62,63 @@ export default function Page({params} : {params : {epicID : string}}){
     }
 
 
-    const mockData: TaskEditorType[] = [
-        {
-            TASKID: "1",
-            TASKNAME: "Task 1",
-            TASKREQ: "Requirement 1",
-            TASKLINK: "https://example.com/task1",
-            TASKLOG: "Log for Task 1",
-            TASKSTATUS: "TESTING",
-            TASKSPRINTID: "1",
-            TASKSTARTDATE: "2023-09-01",
-            TASKENDDATE: "2023-09-15",
-            perms : [],
-            sprint: [{
-                SprintID: 1,
-                SprintStartDate: "2022-05-04",
-                SprintEndDate : "2022-05-04"
-            },
-            {
-                SprintID: 2,
-                SprintStartDate: "2022-05-04",
-                SprintEndDate : "2022-05-04",
-            }]
-        },
-        {
-            TASKID: 2,
-            TASKNAME: "Task 2",
-            TASKREQ: "Requirement 2",
-            TASKLINK: "https://example.com/task2",
-            TASKLOG: "Log for Task 2",
-            TASKSTATUS: "COMPLETED",
-            TASKSPRINTID: "Sprint 2",
-            TASKSTARTDATE: "2023-09-05",
-            TASKENDDATE: "2023-09-20",
-            perms: [],
-            sprint: [{
-                SprintID: 1,
-                SprintStartDate: "2022-05-04",
-                SprintEndDate : "2022-05-04"
-            }]
-        },
-        // Add more objects as needed
-      ];
+    // const mockData: TaskEditorType[] = [
+    //     {
+    //         TASKID: "1",
+    //         TASKNAME: "Task 1",
+    //         TASKREQ: "Requirement 1",
+    //         TASKLINK: "https://example.com/task1",
+    //         TASKLOG: "Log for Task 1",
+    //         TASKSTATUS: "TESTING",
+    //         TASKSPRINTID: "1",
+    //         TASKSTARTDATE: "2023-09-01",
+    //         TASKENDDATE: "2023-09-15",
+    //         perms : [],
+    //         sprint: [{
+    //             SprintID: 1,
+    //             SprintStartDate: "2022-05-04",
+    //             SprintEndDate : "2022-05-04"
+    //         },
+    //         {
+    //             SprintID: 2,
+    //             SprintStartDate: "2022-05-04",
+    //             SprintEndDate : "2022-05-04",
+    //         }]
+    //     },
+    //     {
+    //         TASKID: 2,
+    //         TASKNAME: "Task 2",
+    //         TASKREQ: "Requirement 2",
+    //         TASKLINK: "https://example.com/task2",
+    //         TASKLOG: "Log for Task 2",
+    //         TASKSTATUS: "COMPLETED",
+    //         TASKSPRINTID: "Sprint 2",
+    //         TASKSTARTDATE: "2023-09-05",
+    //         TASKENDDATE: "2023-09-20",
+    //         perms: [],
+    //         sprint: [{
+    //             SprintID: 1,
+    //             SprintStartDate: "2022-05-04",
+    //             SprintEndDate : "2022-05-04"
+    //         }]
+    //     },
+    //     // Add more objects as needed
+    //   ];
     
-
-
     return(
         <div className="w-full h-full flex flex-col gap-4 p-2 pt-5">
             <div className="w-full flex flex-col md:flex-row md:justify-between">
+                
                 <span className="text-2xl md:text-3xl lg:text-5xl font-bold text-center">{currentEpicDetails.EpicName}</span>
                 <div className="flex gap-2 justify-between">
-                    <button className="bg-slate-600 p-2 rounded-md text-white shadow-lg w-full">View Members</button>
-                    <button className="bg-slate-600 p-2 rounded-md text-white shadow-lg w-full">Add Member</button>
+                    <button className="bg-black/80 p-2 rounded-md text-white shadow-lg w-full" onClick={()=>router.push(`/dashboard/epic/${currentEpicDetails.EpicID}/members`)}>View Members</button>
+                    <button className="bg-blue-500/50 p-2 rounded-md text-white shadow-lg w-full" onClick={()=>router.push("/dashboard")}>Go To Dashboard</button>
                 </div>
             </div>
             <div className="w-full"  >
                 <div className={`bg-black text-white flex justify-start items-center gap-3 cursor-pointer pl-2 text-3xl p-1 pr-2 rounded-t-md ${!isDetailsOpen && "rounded-b-md"}`} onClick={()=>SetIsDetailsOpen((state)=>!state)}>
                     <span>{isDetailsOpen ? "▼" : "▶"}</span>
-                    <span className="" >Details</span>   
+                    <span className="" >Details</span>
                 </div>
                 {isDetailsOpen && 
                     <EpicDetails
@@ -127,8 +129,14 @@ export default function Page({params} : {params : {epicID : string}}){
             </div>            
             <div className="w-full flex flex-col lg:flex-row gap-4 items-center h-fit">
                 <div className="w-full lg:w-1/2 h-3/4 lg:max-h-[700px] bg-white shadow-md rounded-lg p-3">
-                    <p className="text-2xl font-bold text-center lg:text-left">Task list</p>
+                    <p className="text-2xl font-bold text-center lg:text-left">Task list</p>                    
                     <div className="flex flex-col max-h-[500px] lg:max-h-[500px] overflow-y-auto gap-1">
+                        {epicPerms.find(EpicPerms.ADDTASK.valueOf) !== null && 
+                            <div className="bg-[#d6dbdcd9] w-full h-fit min-h-20 flex flex-col items-center justify-center text-2xl rounded-lg cursor-pointer" >
+                                <span onClick={()=>setShowAddTask(state=>!state)} className="w-full text-center">{showAddTask ? "-" : "+"}Add Task</span>
+                                {showAddTask && <TaskInput />}
+                            </div>
+                        }
                         {taskList.map((taskPreview,index)=>(
                             <TaskPreview 
                                 taskPreview={taskPreview}
@@ -140,7 +148,7 @@ export default function Page({params} : {params : {epicID : string}}){
                 </div>
                 <div className="w-full lg:w-1/2 h-[700px] bg-white flex items-center shadow-md rounded-lg">
                     {isTaskEditorOpen ?
-                        <TaskEditor task={mockData[0]}/> :
+                        <TaskEditor task={taskEditorContents}/> :
                         <p className="w-full text-center">Select Task to preview</p>
                     }
                     

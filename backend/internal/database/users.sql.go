@@ -13,7 +13,7 @@ import (
 
 const activateAccount = `-- name: ActivateAccount :exec
 UPDATE users
-SET users_account_status="ACTIVE"
+SET users_account_status='ACTIVE'
 WHERE users_id=$1
 `
 
@@ -60,7 +60,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 
 const deactivateAccount = `-- name: DeactivateAccount :exec
 UPDATE users
-SET users_account_status="DEACTIVE"
+SET users_account_status='DEACTIVE'
 WHERE users_id=$1
 `
 

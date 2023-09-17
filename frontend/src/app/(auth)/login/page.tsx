@@ -5,8 +5,7 @@ import { useEffect, useState } from "react"
 import { useDispatch, useSelector } from 'react-redux'
 import { UserState } from "@/redux/user/userSlice"
 import { login } from "@/redux/user/userSlice"
-import axios, { AxiosError } from "axios"
-import { openModal } from "@/redux/modal/modalSlice"
+import axios from "axios"
 import { useRouter } from "next/navigation"
 import { RootState } from "@/redux/store"
 
@@ -51,8 +50,8 @@ export default function Page(){
                     'Content-Type': 'application/json',
                 },
             })
-            setIsLoading(false)
             dispatch(login(response.data))
+            setIsLoading(false)
             router.push("/dashboard")
         }catch (err :any ){
             setIsLoading(false)
