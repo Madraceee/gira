@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/common"
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/database"
@@ -17,10 +18,11 @@ type AuthConfig struct {
 }
 
 type payload struct {
-	Token string `json:"token"`
-	Email string `json:"email"`
-	Name  string `json:"name"`
-	Role  string `json:"role"`
+	Token    string    `json:"token"`
+	Email    string    `json:"email"`
+	Name     string    `json:"name"`
+	Role     string    `json:"role"`
+	ExpireAt time.Time `json:"expire_at"`
 }
 
 func (authCfg *AuthConfig) Login(w http.ResponseWriter, r *http.Request) {
@@ -66,20 +68,23 @@ func (authCfg *AuthConfig) Login(w http.ResponseWriter, r *http.Request) {
 
 	if err == nil {
 		utils.RespondWithJSON(w, 200, payload{
-			Token: user_auth.UserAuthToken,
-			Email: user.UsersEmail,
-			Name:  user.UsersName,
-			Role:  user.UsersType,
+			Token:    user_auth.UserAuthToken,
+			Email:    user.UsersEmail,
+			Name:     user.UsersName,
+			Role:     user.UsersType,
+			ExpireAt: user_auth.UserAuthTimestamp.Add(time.Hour),
 		})
 		return
 	}
 
+	// If User token does not exist.
 	// Generate JWT Token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
-			"id":    user.UsersID.String(),
-			"email": user.UsersEmail,
-			"role":  user.UsersType,
+			"id":        user.UsersID.String(),
+			"email":     user.UsersEmail,
+			"role":      user.UsersType,
+			"expire_at": time.Now().Add(time.Hour),
 		})
 
 	s, err := token.SignedString([]byte("test"))
@@ -96,10 +101,11 @@ func (authCfg *AuthConfig) Login(w http.ResponseWriter, r *http.Request) {
 	})
 
 	utils.RespondWithJSON(w, http.StatusOK, payload{
-		Token: s,
-		Email: user.UsersEmail,
-		Name:  user.UsersName,
-		Role:  user.UsersType,
+		Token:    s,
+		Email:    user.UsersEmail,
+		Name:     user.UsersName,
+		Role:     user.UsersType,
+		ExpireAt: time.Now().Add(time.Hour),
 	})
 }
 

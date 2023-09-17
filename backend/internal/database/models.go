@@ -27,6 +27,18 @@ type EpicMember struct {
 	EpicMembersEpicID uuid.UUID
 }
 
+type Permission struct {
+	PermissionID   int32
+	PermissionName string
+	PermissionDesc string
+}
+
+type Role struct {
+	RoleID     int32
+	RoleEpicID uuid.UUID
+	RoleName   string
+}
+
 type Sprint struct {
 	SprintEpicID    uuid.UUID
 	SprintID        int32
@@ -45,6 +57,13 @@ type Task struct {
 	TaskEndDate   sql.NullTime
 	TaskStatus    string
 	TaskSprintID  sql.NullInt32
+}
+
+type TaskAssignment struct {
+	TaskAssignmentTaskID  uuid.UUID
+	TaskAssignmentEpicID  uuid.UUID
+	TaskAssignmentUsersID uuid.UUID
+	TaskAssignmentRoleID  int32
 }
 
 type User struct {

@@ -11,6 +11,17 @@ import (
 	"github.com/google/uuid"
 )
 
+const activateAccount = `-- name: ActivateAccount :exec
+UPDATE users
+SET users_account_status="ACTIVE"
+WHERE users_id=$1
+`
+
+func (q *Queries) ActivateAccount(ctx context.Context, usersID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, activateAccount, usersID)
+	return err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (users_id,users_email,users_name,users_account_status,users_type,users_password)
 VALUES ($1,$2,$3,$4,$5,$6)
@@ -45,6 +56,17 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.UsersPassword,
 	)
 	return i, err
+}
+
+const deactivateAccount = `-- name: DeactivateAccount :exec
+UPDATE users
+SET users_account_status="DEACTIVE"
+WHERE users_id=$1
+`
+
+func (q *Queries) DeactivateAccount(ctx context.Context, usersID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deactivateAccount, usersID)
+	return err
 }
 
 const login = `-- name: Login :one

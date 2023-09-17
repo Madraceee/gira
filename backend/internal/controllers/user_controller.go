@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/common"
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/database"
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/utils"
 	"github.com/google/uuid"
@@ -33,7 +34,22 @@ func (usrCfg *UserConfig) CreateNewUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Check Whether User is present , If so return
+	// Check Whether User is present , Return Error
+	user, err := usrCfg.DB.Login(r.Context(), params.Email)
+	if user.UsersEmail == params.Email && user.UsersAccountStatus == "ACTIVE" {
+		utils.RespondWithError(w, 400, "Account Exists")
+		return
+	}
+	if user.UsersEmail == params.Email && user.UsersAccountStatus == "DEACTIVE" {
+		err := usrCfg.DB.ActivateAccount(r.Context(), user.UsersID)
+		if err != nil {
+			log.Printf("Cannot activate account of %v : %v", user.UsersEmail, err)
+			utils.RespondWithError(w, http.StatusInternalServerError, "Cannot Activate Account")
+			return
+		}
+		utils.RespondWithJSON(w, 200, "Deactive Account Activated")
+		return
+	}
 
 	// Encrpt password
 	hashed_password, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
@@ -58,4 +74,15 @@ func (usrCfg *UserConfig) CreateNewUser(w http.ResponseWriter, r *http.Request) 
 	}
 
 	utils.RespondWithJSON(w, http.StatusCreated, nil)
+}
+
+func (usrCfg *UserConfig) DeactivateAccount(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+
+	err := usrCfg.DB.DeactivateAccount(r.Context(), user.Id)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Cannot Deactivate account")
+		return
+	}
+
+	utils.RespondWithJSON(w, 200, "Account Deactivated")
 }
