@@ -61,49 +61,6 @@ export default function Page({params} : {params : {epicID : string}}){
         setIsTaskEditorOpen(true);
     }
 
-
-    // const mockData: TaskEditorType[] = [
-    //     {
-    //         TASKID: "1",
-    //         TASKNAME: "Task 1",
-    //         TASKREQ: "Requirement 1",
-    //         TASKLINK: "https://example.com/task1",
-    //         TASKLOG: "Log for Task 1",
-    //         TASKSTATUS: "TESTING",
-    //         TASKSPRINTID: "1",
-    //         TASKSTARTDATE: "2023-09-01",
-    //         TASKENDDATE: "2023-09-15",
-    //         perms : [],
-    //         sprint: [{
-    //             SprintID: 1,
-    //             SprintStartDate: "2022-05-04",
-    //             SprintEndDate : "2022-05-04"
-    //         },
-    //         {
-    //             SprintID: 2,
-    //             SprintStartDate: "2022-05-04",
-    //             SprintEndDate : "2022-05-04",
-    //         }]
-    //     },
-    //     {
-    //         TASKID: 2,
-    //         TASKNAME: "Task 2",
-    //         TASKREQ: "Requirement 2",
-    //         TASKLINK: "https://example.com/task2",
-    //         TASKLOG: "Log for Task 2",
-    //         TASKSTATUS: "COMPLETED",
-    //         TASKSPRINTID: "Sprint 2",
-    //         TASKSTARTDATE: "2023-09-05",
-    //         TASKENDDATE: "2023-09-20",
-    //         perms: [],
-    //         sprint: [{
-    //             SprintID: 1,
-    //             SprintStartDate: "2022-05-04",
-    //             SprintEndDate : "2022-05-04"
-    //         }]
-    //     },
-    //     // Add more objects as needed
-    //   ];
     
     return(
         <div className="w-full h-full flex flex-col gap-4 p-2 pt-5">
@@ -131,7 +88,7 @@ export default function Page({params} : {params : {epicID : string}}){
                 <div className="w-full lg:w-1/2 h-3/4 lg:max-h-[700px] bg-white shadow-md rounded-lg p-3">
                     <p className="text-2xl font-bold text-center lg:text-left">Task list</p>                    
                     <div className="flex flex-col max-h-[500px] lg:max-h-[500px] overflow-y-auto gap-1">
-                        {epicPerms.find(EpicPerms.ADDTASK.valueOf) !== null && 
+                        {epicPerms.find((perm)=> perm == EpicPerms.ADDTASK.valueOf() ) && 
                             <div className="bg-[#d6dbdcd9] w-full h-fit min-h-20 flex flex-col items-center justify-center text-2xl rounded-lg cursor-pointer" >
                                 <span onClick={()=>setShowAddTask(state=>!state)} className="w-full text-center">{showAddTask ? "-" : "+"}Add Task</span>
                                 {showAddTask && <TaskInput />}

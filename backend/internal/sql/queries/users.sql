@@ -18,3 +18,13 @@ WHERE users_id=$1;
 SELECT * FROM users
 WHERE users_email=$1;
 
+-- name: GetEpicMembers :many
+SELECT users_name,users_email FROM users
+JOIN epic_members
+ON users_id=epic_members_user_id
+WHERE epic_members_epic_id=$1;
+
+-- name: GetIDFromEmail :one
+SELECT users_id FROM users
+WHERE users_email=$1;
+

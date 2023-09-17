@@ -17,4 +17,5 @@ func UserRoute(r *chi.Mux, conn *sql.DB) {
 
 	r.Post("/user/createUser", usrApi.CreateNewUser)
 	r.Patch("/user/deactivateAcc", middleware.MiddlewareAuth(usrApi.DeactivateAccount, usrApi.DB))
+	r.Get("/user/getUsersOfEpic/{id}", middleware.MiddlewareAuth(usrApi.GetEpicMembers, usrApi.DB))
 }

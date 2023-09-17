@@ -11,19 +11,19 @@ import (
 	"github.com/google/uuid"
 )
 
-const createMasterEpicRole = `-- name: CreateMasterEpicRole :one
+const createEpicRole = `-- name: CreateEpicRole :one
 INSERT INTO role (role_epic_id,role_name,role_category)
 VALUES ($1,$2,'EPIC')
 RETURNING role_id, role_epic_id, role_name, role_category
 `
 
-type CreateMasterEpicRoleParams struct {
+type CreateEpicRoleParams struct {
 	RoleEpicID uuid.UUID
 	RoleName   string
 }
 
-func (q *Queries) CreateMasterEpicRole(ctx context.Context, arg CreateMasterEpicRoleParams) (Role, error) {
-	row := q.db.QueryRowContext(ctx, createMasterEpicRole, arg.RoleEpicID, arg.RoleName)
+func (q *Queries) CreateEpicRole(ctx context.Context, arg CreateEpicRoleParams) (Role, error) {
+	row := q.db.QueryRowContext(ctx, createEpicRole, arg.RoleEpicID, arg.RoleName)
 	var i Role
 	err := row.Scan(
 		&i.RoleID,
@@ -55,4 +55,21 @@ func (q *Queries) CreateTaskRole(ctx context.Context, arg CreateTaskRoleParams) 
 		&i.RoleCategory,
 	)
 	return i, err
+}
+
+const getRoleIDFromRoleName = `-- name: GetRoleIDFromRoleName :one
+SELECT role_id FROM role
+WHERE role_epic_id=$1 AND role_name=$2
+`
+
+type GetRoleIDFromRoleNameParams struct {
+	RoleEpicID uuid.UUID
+	RoleName   string
+}
+
+func (q *Queries) GetRoleIDFromRoleName(ctx context.Context, arg GetRoleIDFromRoleNameParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, getRoleIDFromRoleName, arg.RoleEpicID, arg.RoleName)
+	var role_id int32
+	err := row.Scan(&role_id)
+	return role_id, err
 }

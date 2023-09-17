@@ -44,19 +44,19 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
             <p className="w-full text-3xl font-bold">{taskCopy.TASKNAME}</p>
             <div className="flex items-center gap-1">
                 <span className={headingStyle}>Requirements: </span>
-                <span className="min-w-[50px] max-w-full max-h-16 overflow-y-auto inline-block border-black border-2 rounded-sm" contentEditable={task.perms.find((TaskRoles.UPDATETASKFULL.valueOf)) === undefined ? false : true} onInput={(e)=>setTaskReq(e.currentTarget.textContent === null ? "": e.currentTarget.textContent)}>{taskCopy.TASKREQ}</span>
+                <span className="min-w-[50px] max-w-full max-h-16 min-h-[20px] overflow-y-auto inline-block border-black border-2 rounded-sm" contentEditable={task.perms.find((perm)=>perm === TaskRoles.UPDATETASKFULL.valueOf()) === undefined ? false : true} onInput={(e)=>setTaskReq(e.currentTarget.textContent === null ? "": e.currentTarget.textContent)}>{taskCopy.TASKREQ}</span>
             </div>            
             <div className="flex items-center gap-1">
                 <span className={headingStyle}>Link: </span>
-                <span className="min-w-[50px] max-w-full max-h-16 overflow-y-auto inline-block border-black border-2 rounded-sm" contentEditable={task.perms.find((TaskRoles.UPDATETASKFULL.valueOf)) === undefined ? false : true} onInput={(e)=>setTaskLink(e.currentTarget.textContent === null ? "": e.currentTarget.textContent)}><a href={taskCopy.TASKLINK} className="text-blue-400 underline">{taskCopy.TASKLINK}</a></span>
+                <span className="min-w-[50px] max-w-full max-h-16 min-h-[20px] overflow-y-auto block border-black border-2 rounded-sm" contentEditable={task.perms.find((perm => perm === TaskRoles.UPDATETASKFULL.valueOf())) === undefined ? false : true} onInput={(e)=>setTaskLink(e.currentTarget.textContent === null ? "": e.currentTarget.textContent)}><a href={taskCopy.TASKLINK} className="text-blue-400 underline">{taskCopy.TASKLINK}</a></span>
             </div>
             <div className="flex items-center gap-1">
                 <span className={headingStyle}>Logs:</span>
-                <span className="min-w-[50px] break-all max-h-28 overflow-y-auto inline-block border-black border-2 rounded-sm" contentEditable={task.perms.find((TaskRoles.UPDATETASKFULL.valueOf)) === undefined ? false : true} onInput={(e)=>setTaskLog(e.currentTarget.textContent === null ? "": e.currentTarget.textContent)}>{taskCopy.TASKLINK}</span>
+                <span className="min-w-[50px] break-all max-h-28 min-h-[20px] overflow-y-auto inline-block border-black border-2 rounded-sm" contentEditable={task.perms.find((perm => perm === TaskRoles.UPDATETASKFULL.valueOf())) === undefined ? false : true} onInput={(e)=>setTaskLog(e.currentTarget.textContent === null ? "": e.currentTarget.textContent)}>{taskCopy.TASKLINK}</span>
             </div>
             
             <p className="w-full flex items-center gap-1"><span className={headingStyle}>Status: </span>
-                <select onChange={(e)=>setTaskStatus(e.target.value)} defaultValue={taskCopy.TASKSTATUS} disabled={(task.perms.find((TaskRoles.UPDATESTATUS.valueOf)) === undefined ? true : false) && (task.perms.find((TaskRoles.UPDATETASKFULL.valueOf)) === undefined ? true : false)}>
+                <select onChange={(e)=>setTaskStatus(e.target.value)} defaultValue={taskCopy.TASKSTATUS} disabled={(task.perms.find((perm=> perm===TaskRoles.UPDATESTATUS.valueOf())) === undefined ? true : false) && (task.perms.find((perm=> perm === TaskRoles.UPDATETASKFULL.valueOf())) === undefined ? true : false)}>
                     <option value="NOT STARTED" >NOT STARTED</option>
                     <option value="BUILDING" >BUILDING</option>
                     <option value="TESTING" >TESTING</option>
@@ -67,7 +67,7 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
             </p>
 
             <p className="w-full flex items-center gap-1"><span className={headingStyle}>Sprint ID:</span>
-                <select onChange={(e)=>setTaskSpringID(e.target.value)} defaultValue={taskCopy.TASKSPRINTID} disabled={task.perms.find((TaskRoles.UPDATETASKFULL.valueOf)) === undefined ? false : false} className="min-w-[100px] text-right pr-2">
+                <select onChange={(e)=>setTaskSpringID(e.target.value)} defaultValue={taskCopy.TASKSPRINTID} disabled={task.perms.find((perm => perm === TaskRoles.UPDATETASKFULL.valueOf())) === undefined ? false : false} className="min-w-[100px] text-right pr-2">
                     {task.sprint.map((sprint,index)=>{
                         return(
                             <option value={sprint.SprintID} key={index}>{sprint.SprintID}</option>
@@ -81,7 +81,7 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
                 <p className="w-1/2"><span className={headingStyle}>End Date: </span>{task.TASKENDDATE}</p>
             </div>
             <div className="flex flex-row justify-between gap-2">
-                <button disabled={task.perms.find((TaskRoles.ADDMEMBERS.valueOf)) === undefined ? true : false} className="bg-slate-600 text-white p-1 pl-2 pr-2 rounded-md cursor-not-allowed">Add Member</button>
+                <button disabled={task.perms.find((perm=> perm === TaskRoles.ADDMEMBERS.valueOf())) === undefined ? true : false} className="bg-slate-600 text-white p-1 pl-2 pr-2 rounded-md cursor-not-allowed">Add Member</button>
                 <button disabled={!hasChanged} className="bg-blue-400 text-white p-1 pl-2 pr-2 rounded-md disabled:bg-blue-100">Save</button>
             </div>
         </div>

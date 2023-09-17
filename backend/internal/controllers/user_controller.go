@@ -10,6 +10,7 @@ import (
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/common"
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/database"
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/utils"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -92,4 +93,39 @@ func (usrCfg *UserConfig) DeactivateAccount(w http.ResponseWriter, r *http.Reque
 	}
 
 	utils.RespondWithJSON(w, 200, "Account Deactivated")
+}
+
+// Get Epic members/users list
+func (usrCfg *UserConfig) GetEpicMembers(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+	epicID := chi.URLParam(r, "id")
+
+	parsedEpicID, err := uuid.Parse(epicID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Malformed ID")
+		return
+	}
+
+	_, err = usrCfg.DB.GetEpic(r.Context(), database.GetEpicParams{
+		EpicMembersUserID: user.Id,
+		EpicID:            parsedEpicID,
+	})
+
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			utils.RespondWithError(w, http.StatusForbidden, "Must be part of epic")
+			return
+		}
+		log.Printf("Could not get Epic Date: %v", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Could not fetch Data")
+		return
+	}
+
+	members, err := usrCfg.DB.GetEpicMembers(r.Context(), parsedEpicID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Wonrg Epid ID")
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, members)
+	return
 }

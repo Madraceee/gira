@@ -63,6 +63,7 @@ func (authCfg *AuthConfig) Login(w http.ResponseWriter, r *http.Request) {
 		if err.Error() != "sql: no rows in result set" {
 			log.Printf("Error while fetching user_auth %v", err)
 			utils.RespondWithError(w, 500, "Server Error")
+			return
 		}
 	}
 

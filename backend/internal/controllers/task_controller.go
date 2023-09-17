@@ -24,7 +24,9 @@ import (
 
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/common"
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/database"
+	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/service"
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/utils"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
@@ -33,12 +35,6 @@ type TaskConfig struct {
 }
 
 func (taskCfg *TaskConfig) CreateTask(w http.ResponseWriter, r *http.Request, user *common.UserData) {
-	// MASTER can add Tasks
-	// Next: Users with permissions can also*
-	role := strings.ToUpper(user.Role)
-	if role != "MASTER" && true {
-		utils.RespondWithError(w, http.StatusMethodNotAllowed, "Not Authorized to create Task")
-	}
 
 	// Input from user to create an Task
 	type parameters struct {
@@ -57,6 +53,20 @@ func (taskCfg *TaskConfig) CreateTask(w http.ResponseWriter, r *http.Request, us
 		return
 	}
 
+	perms, err := service.FetchEpicPermissions(params.EpicID, user.Id, taskCfg.DB, r.Context())
+
+	isAllowed := false
+	for _, v := range perms {
+		if v == 102 {
+			isAllowed = true
+		}
+	}
+
+	if isAllowed == false {
+		utils.RespondWithError(w, http.StatusForbidden, "Not Allowed")
+		return
+	}
+
 	var end_date sql.NullTime
 	if !params.End_date.IsZero() {
 		end_date.Time = params.End_date
@@ -65,7 +75,7 @@ func (taskCfg *TaskConfig) CreateTask(w http.ResponseWriter, r *http.Request, us
 		end_date.Valid = false
 	}
 
-	// Frontend should ensure the fields are set properly else empty string will be created.
+	// Create Task
 	task, err := taskCfg.DB.CreateTask(r.Context(), database.CreateTaskParams{
 		TaskEpicID:    params.EpicID,
 		TaskID:        uuid.New(),
@@ -76,15 +86,55 @@ func (taskCfg *TaskConfig) CreateTask(w http.ResponseWriter, r *http.Request, us
 		TaskStatus:    "NOT STARTED",
 	})
 
-	// Note: Add MASTER to TASK_ASSIGNMENT
-
 	if err != nil {
 		log.Printf("Error while inserting into DB by %v : %v", user.Email, err.Error())
 		utils.RespondWithError(w, http.StatusBadRequest, "Input Error")
 		return
 	}
 
+	roleId, _ := taskCfg.DB.GetRoleIDFromRoleName(r.Context(), database.GetRoleIDFromRoleNameParams{
+		RoleEpicID: params.EpicID,
+		RoleName:   "Developer",
+	})
+
+	// Adding Creator as developer of task
+	taskCfg.DB.AddUserToTask(r.Context(), database.AddUserToTaskParams{
+		TaskAssignmentTaskID:  task.TaskID,
+		TaskAssignmentEpicID:  params.EpicID,
+		TaskAssignmentUsersID: user.Id,
+		TaskAssignmentRoleID:  roleId,
+	})
+
 	utils.RespondWithJSON(w, http.StatusOK, task)
+}
+
+func (taskCfg *TaskConfig) FetchUsersTask(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+
+	epicId := chi.URLParam(r, "id")
+
+	parsedId, err := uuid.Parse(epicId)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Malfomed ID")
+		return
+	}
+
+	taskList, err := taskCfg.DB.GetUsersTask(r.Context(), database.GetUsersTaskParams{
+		TaskEpicID:            parsedId,
+		TaskAssignmentUsersID: user.Id,
+	})
+
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			utils.RespondWithJSON(w, http.StatusOK, nil)
+			return
+		}
+		utils.RespondWithError(w, http.StatusInternalServerError, "Malfomed ID")
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, taskList)
+	return
+
 }
 
 func (taskCfg *TaskConfig) UpdateTaskStatus(w http.ResponseWriter, r *http.Request, user *common.UserData) {

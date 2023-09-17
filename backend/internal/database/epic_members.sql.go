@@ -93,18 +93,33 @@ func (q *Queries) GetEpicsOfUser(ctx context.Context, epicMembersUserID uuid.UUI
 
 const insertEpicMember = `-- name: InsertEpicMember :one
 INSERT INTO epic_members (epic_members_epic_id,epic_members_user_id)
-VALUES ($1,$2)
+VALUES ($1,(SELECT users_id FROM users WHERE users_email=$2))
 RETURNING epic_members_user_id, epic_members_epic_id
 `
 
 type InsertEpicMemberParams struct {
 	EpicMembersEpicID uuid.UUID
-	EpicMembersUserID uuid.UUID
+	UsersEmail        string
 }
 
 func (q *Queries) InsertEpicMember(ctx context.Context, arg InsertEpicMemberParams) (EpicMember, error) {
-	row := q.db.QueryRowContext(ctx, insertEpicMember, arg.EpicMembersEpicID, arg.EpicMembersUserID)
+	row := q.db.QueryRowContext(ctx, insertEpicMember, arg.EpicMembersEpicID, arg.UsersEmail)
 	var i EpicMember
 	err := row.Scan(&i.EpicMembersUserID, &i.EpicMembersEpicID)
 	return i, err
+}
+
+const removeMember = `-- name: RemoveMember :exec
+DELETE FROM epic_members
+WHERE epic_members_epic_id=$1 AND epic_members_user_id=$2
+`
+
+type RemoveMemberParams struct {
+	EpicMembersEpicID uuid.UUID
+	EpicMembersUserID uuid.UUID
+}
+
+func (q *Queries) RemoveMember(ctx context.Context, arg RemoveMemberParams) error {
+	_, err := q.db.ExecContext(ctx, removeMember, arg.EpicMembersEpicID, arg.EpicMembersUserID)
+	return err
 }

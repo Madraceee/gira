@@ -69,6 +69,53 @@ func (q *Queries) DeactivateAccount(ctx context.Context, usersID uuid.UUID) erro
 	return err
 }
 
+const getEpicMembers = `-- name: GetEpicMembers :many
+SELECT users_name,users_email FROM users
+JOIN epic_members
+ON users_id=epic_members_user_id
+WHERE epic_members_epic_id=$1
+`
+
+type GetEpicMembersRow struct {
+	UsersName  string
+	UsersEmail string
+}
+
+func (q *Queries) GetEpicMembers(ctx context.Context, epicMembersEpicID uuid.UUID) ([]GetEpicMembersRow, error) {
+	rows, err := q.db.QueryContext(ctx, getEpicMembers, epicMembersEpicID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetEpicMembersRow
+	for rows.Next() {
+		var i GetEpicMembersRow
+		if err := rows.Scan(&i.UsersName, &i.UsersEmail); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getIDFromEmail = `-- name: GetIDFromEmail :one
+SELECT users_id FROM users
+WHERE users_email=$1
+`
+
+func (q *Queries) GetIDFromEmail(ctx context.Context, usersEmail string) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, getIDFromEmail, usersEmail)
+	var users_id uuid.UUID
+	err := row.Scan(&users_id)
+	return users_id, err
+}
+
 const login = `-- name: Login :one
 SELECT users_id, users_email, users_name, users_account_status, users_type, users_password FROM users
 WHERE users_email=$1

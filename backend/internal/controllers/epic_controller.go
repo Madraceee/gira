@@ -74,12 +74,12 @@ func (epicCfg *EpicConfig) CreateEpic(w http.ResponseWriter, r *http.Request, us
 	// Add Master to the EPIC_MEMBER table
 	_, err = epicCfg.DB.InsertEpicMember(r.Context(), database.InsertEpicMemberParams{
 		EpicMembersEpicID: epic.EpicID,
-		EpicMembersUserID: user.Id,
+		UsersEmail:        user.Email,
 	})
 
 	// Create Roles
 	// Master Role for EPIC(access to everything)
-	epicRole, err := epicCfg.DB.CreateMasterEpicRole(r.Context(), database.CreateMasterEpicRoleParams{
+	epicRole, err := epicCfg.DB.CreateEpicRole(r.Context(), database.CreateEpicRoleParams{
 		RoleEpicID: epic.EpicID,
 		RoleName:   "MASTER",
 	})
@@ -145,79 +145,120 @@ func (epicCfg *EpicConfig) CreateEpic(w http.ResponseWriter, r *http.Request, us
 	utils.RespondWithJSON(w, http.StatusOK, epic)
 }
 
-func (epicCfg *EpicConfig) UpdateEpic(w http.ResponseWriter, r *http.Request, user *common.UserData) {
-	// Allow only MASTERS to create EPIC
-	role := strings.ToUpper(user.Role)
-	if role != "MASTER" {
-		utils.RespondWithError(w, http.StatusMethodNotAllowed, "Not Authorized to create EPIC")
-	}
+// Add member to an EPIC
+// Add member to an EPIC
+func (epicCfg *EpicConfig) AddMemberToEpic(w http.ResponseWriter, r *http.Request, user *common.UserData) {
 
-	// Input from user to Update an EPIC
 	type parameters struct {
-		EpicID      uuid.UUID `json:"epic_id"`
-		Description string    `json:"desc"`
-		Features    string    `json:"features"`
-		End_date    time.Time `json:"end_date"`
+		EpicId    uuid.UUID `json:"epic_id"`
+		UserEmail string    `json:"user_email"`
 	}
-	decoder := json.NewDecoder(r.Body)
+
+	json := json.NewDecoder(r.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
-	if err != nil {
-		log.Print(err)
-		utils.RespondWithError(w, 400, "Invalid Input")
-		return
-	}
-
-	// Make sure EPIC_ID is present
-	if params.EpicID == uuid.Nil {
-		utils.RespondWithError(w, http.StatusBadRequest, "Epic Value not given")
-		return
-	}
-
-	// Get Epic from DB
-	epic, err := epicCfg.DB.GetEpicFromEpicID(r.Context(), params.EpicID)
-	if err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, "No EPIC found")
-		return
-	}
-
-	// Check whether the user is the owner of the EPIC
-	if user.Id != epic.EpicOwner {
-		utils.RespondWithError(w, http.StatusUnauthorized, "Only Owner can update EPIC")
-		return
-	}
-
-	// Insert the updated values only
-	if params.Description == "" {
-		params.Description = epic.EpicDescription
-	}
-	if params.Features == "" {
-		params.Features = epic.EpicFeatures
-	}
-
-	var inputEndTime sql.NullTime
-	if params.End_date.IsZero() {
-		inputEndTime.Time = epic.EpicEndDate.Time
-		inputEndTime.Valid = epic.EpicEndDate.Valid
-	} else {
-		inputEndTime.Time = params.End_date
-		inputEndTime.Valid = true
-	}
-
-	err = epicCfg.DB.UpdateEpic(r.Context(), database.UpdateEpicParams{
-		EpicID:          epic.EpicID,
-		EpicDescription: params.Description,
-		EpicFeatures:    params.Features,
-		EpicEndDate:     inputEndTime,
-	})
+	err := json.Decode(&params)
 
 	if err != nil {
-		log.Printf("Error while updating EPIC %v : %v", user.Email, err.Error())
-		utils.RespondWithError(w, http.StatusBadRequest, "Input Error")
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
 		return
 	}
 
-	utils.RespondWithJSON(w, http.StatusOK, nil)
+	if params.UserEmail == user.Email {
+		utils.RespondWithError(w, http.StatusBadRequest, "Cannot Add Self")
+		return
+	}
+
+	perms, err := service.FetchEpicPermissions(params.EpicId, user.Id, epicCfg.DB, r.Context())
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
+		return
+	}
+
+	// Checking whether the Initiator has permission to add user to epic
+	for _, perm := range perms {
+		if perm == 100 {
+			// Initiator has permission to add
+			epicCfg.DB.InsertEpicMember(r.Context(), database.InsertEpicMemberParams{
+				EpicMembersEpicID: params.EpicId,
+				UsersEmail:        params.UserEmail,
+			})
+		}
+	}
+}
+
+// Delete Member from an EPIC
+// Add member to an EPIC
+func (epicCfg *EpicConfig) DeleteMemberFromEpic(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+
+	type parameters struct {
+		EpicId    uuid.UUID `json:"epic_id"`
+		UserEmail string    `json:"user_email"`
+	}
+
+	json := json.NewDecoder(r.Body)
+	params := parameters{}
+	err := json.Decode(&params)
+
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
+		return
+	}
+
+	perms, err := service.FetchEpicPermissions(params.EpicId, user.Id, epicCfg.DB, r.Context())
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
+		return
+	}
+
+	// Fetch ID of user who is going to be deleted
+	id, err := epicCfg.DB.GetIDFromEmail(r.Context(), params.UserEmail)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
+		return
+	}
+
+	if id == user.Id {
+		utils.RespondWithError(w, http.StatusBadRequest, "Cannot Delete Self")
+		return
+	}
+
+	// Checking whether the Initiator has permission to remove user from epic
+	for _, perm := range perms {
+		if perm == 101 {
+			// Remove From epic_members table
+			err := epicCfg.DB.RemoveMember(r.Context(), database.RemoveMemberParams{
+				EpicMembersEpicID: params.EpicId,
+				EpicMembersUserID: id,
+			})
+			if err != nil {
+				log.Printf("Cannot Remove Member %v executed by %v : %v", id, user.Email, err)
+				utils.RespondWithError(w, http.StatusInternalServerError, "Server Error")
+				return
+			}
+
+			// Remove From task_assignemnt table
+			err = epicCfg.DB.DeleteUserFromTask(r.Context(), id)
+			if err != nil {
+				log.Printf("Cannot Remove Member %v executed by %v : %v", id, user.Email, err)
+				utils.RespondWithError(w, http.StatusInternalServerError, "Server Error")
+				return
+			}
+
+			//Remove from epic_assignment table
+			err = epicCfg.DB.DeleteUserFromEpic(r.Context(), id)
+			if err != nil {
+				log.Printf("Cannot Remove Member %v executed by %v : %v", id, user.Email, err)
+				utils.RespondWithError(w, http.StatusInternalServerError, "Server Error")
+				return
+			}
+
+			utils.RespondWithJSON(w, http.StatusAccepted, "Success")
+			return
+		}
+	}
+
+	utils.RespondWithError(w, http.StatusForbidden, "No permission")
+	return
 }
 
 func (epicCfg *EpicConfig) DeleteEpic(w http.ResponseWriter, r *http.Request, user *common.UserData) {
