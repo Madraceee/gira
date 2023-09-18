@@ -45,8 +45,6 @@ export default function Page({params} : {params : {epicID : string}}){
             return
         }
        
-        // Get perms for each TASK
-        // SEND That also
         setTaskEditorContents({
             TASKID : task.TASKID,
             TASKENDDATE: task.TASKENDDATE,

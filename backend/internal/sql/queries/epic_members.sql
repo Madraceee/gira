@@ -19,3 +19,7 @@ WHERE epic_members_user_id=$1 AND epic_id=$2;
 -- name: RemoveMember :exec
 DELETE FROM epic_members
 WHERE epic_members_epic_id=$1 AND epic_members_user_id=$2;
+
+-- name: CheckMemberInEpic :one
+SELECT * FROM epic_members
+WHERE epic_members_epic_id=$1 AND epic_members_user_id=$2;

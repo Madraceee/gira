@@ -13,6 +13,23 @@ import (
 	"github.com/google/uuid"
 )
 
+const checkMemberInEpic = `-- name: CheckMemberInEpic :one
+SELECT epic_members_user_id, epic_members_epic_id FROM epic_members
+WHERE epic_members_epic_id=$1 AND epic_members_user_id=$2
+`
+
+type CheckMemberInEpicParams struct {
+	EpicMembersEpicID uuid.UUID
+	EpicMembersUserID uuid.UUID
+}
+
+func (q *Queries) CheckMemberInEpic(ctx context.Context, arg CheckMemberInEpicParams) (EpicMember, error) {
+	row := q.db.QueryRowContext(ctx, checkMemberInEpic, arg.EpicMembersEpicID, arg.EpicMembersUserID)
+	var i EpicMember
+	err := row.Scan(&i.EpicMembersUserID, &i.EpicMembersEpicID)
+	return i, err
+}
+
 const getEpic = `-- name: GetEpic :one
 SELECT epic_id, epic_name, epic_description, epic_features, epic_link, epic_start_date, epic_end_date, epic_owner, epic_members_user_id, epic_members_epic_id FROM epic
 JOIN epic_members

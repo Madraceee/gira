@@ -18,7 +18,12 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
     const [hasChanged,setHasChanged] = useState<boolean>(false);
     const [perms,setPerms] = useState<number[]>([]);
 
-    const {updateTask} = useEpic()
+    // Add member
+    const [taskUpdateEmail,setTaskUpdateEmail] = useState<string>("")
+    const [taskUpdateSelectedRole,setTaskUpdateSelectedRole] = useState<string>("")
+    const [showMemberAdd,setShowMemberAdd] = useState<boolean>(false)
+
+    const {updateTask,addMemberToTask,taskRoles} = useEpic()
 
     useEffect(()=>{
         if(task.TASKREQ !== taskReq){
@@ -42,6 +47,7 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
             return
         }
         setHasChanged(false)
+        setShowMemberAdd(false)
     },[taskReq,taskLink,taskLog,taskStatus,taskSpringID])
 
     useEffect(()=>{
@@ -68,6 +74,8 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
         setTaskReq(task.TASKREQ)
         setTaskStatus(task.TASKSTATUS)
         setTaskSpringID(task.TASKSPRINTID)
+        setTaskUpdateEmail("")
+        setTaskUpdateSelectedRole(taskRoles[0])
     },[task.TASKID])
 
     const taskFullUpdate = perms.find((perm)=>perm === TaskRoles.UPDATETASKFULL.valueOf()) === undefined ? false : true
@@ -78,12 +86,7 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
             <p className="w-full text-3xl font-bold">{taskCopy.TASKNAME}</p>
             <div className="flex items-center gap-1">
                 <span className={headingStyle}>Requirements: </span>
-                <ContentEditable
-                    html={taskReq}
-                    className={`min-w-[50px] max-w-full max-h-16 min-h-[20px] overflow-y-auto inline-block ${taskFullUpdate ? "border-black border-2 rounded-sm" : ""} `}
-                    onChange={(e)=>setTaskReq(e.target.value)}
-                    disabled={!taskFullUpdate}
-                />
+                <span className={`min-w-[50px] max-w-full max-h-16 min-h-[20px] overflow-y-auto inline-block `}>{taskReq}</span>
             </div>            
             <div className="flex items-center gap-1">
                 <span className={headingStyle}>Link: </span>
@@ -99,7 +102,7 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
                 <span className={headingStyle}>Logs:</span>
                 <ContentEditable
                     html={taskLog}
-                    className={`min-w-[50px] max-w-full max-h-16 min-h-[20px] overflow-y-auto inline-block ${taskFullUpdate ? "border-black border-2 rounded-sm" : ""} `}
+                    className={`min-w-[100px] max-w-full max-h-40 min-h-[20px] overflow-y-auto inline-block ${taskFullUpdate ? "border-black border-2 rounded-sm" : ""} `}
                     onChange={(e)=>setTaskLog(e.target.value)}
                     disabled={!taskFullUpdate}
                 />  
@@ -131,9 +134,23 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
                 <p className="w-1/2"><span className={headingStyle}>End Date: </span>{task.TASKENDDATE}</p>
             </div>
             <div className="flex flex-row justify-between gap-2">
-                <button disabled={perms.find((perm=> perm === TaskRoles.ADDMEMBERS.valueOf())) === undefined ? true : false} className={`bg-slate-600 text-white p-1 pl-2 pr-2 rounded-md disabled:cursor-not-allowed`}>Add Member</button>
+                <button disabled={perms.find((perm=> perm === TaskRoles.ADDMEMBERS.valueOf())) === undefined ? true : false} className={`bg-slate-600 text-white p-1 pl-2 pr-2 rounded-md disabled:cursor-not-allowed`} onClick={()=>{setShowMemberAdd(state=> !state)}}>Add Member</button>
                 <button disabled={!hasChanged} className="bg-blue-400 text-white p-1 pl-2 pr-2 rounded-md disabled:bg-blue-100" onClick={()=>updateTask(task.TASKID,taskReq,taskLink,taskLog,taskStatus,taskSpringID)}>Save</button>
             </div>
+            { showMemberAdd &&
+                <div className="flex flex-row justify-between gap-2 bg-[#d6dbdc]  p-2 rounded-lg">
+                    <input type="email" className=" text-black p-1 rounded-md shadow-sm  w-1/2" placeholder="Enter Email" value={taskUpdateEmail} onChange={(e)=>setTaskUpdateEmail(e.target.value)}/>
+                    <select onChange={(e)=>setTaskUpdateSelectedRole(e.target.value)} defaultValue={taskUpdateSelectedRole} className="min-w-[100px] text-right pl-2 pr-2 bg-[#d6dbdc] text-black p-1 rounded-md shadow-sm border-black border-2">
+                        {taskRoles.map((role,index)=>{
+                            return(
+                                <option value={role} key={index}>{role}</option>
+                            )
+                        })}
+                    </select>
+                    <button className="bg-blue-400 text-white p-1 pl-2 pr-2 rounded-md cursor-pointer" onClick={()=>addMemberToTask(task.TASKID,taskUpdateEmail,taskUpdateSelectedRole)}>Add</button>
+                </div>
+            }
+            
         </div>
     )
 }

@@ -12,3 +12,7 @@ RETURNING *;
 -- name: GetRoleIDFromRoleName :one
 SELECT role_id FROM role
 WHERE role_epic_id=$1 AND role_name=$2;
+
+-- name: GetRolesForTasksForEpic :many
+SELECT role_name FROM role
+WHERE role_epic_id=$1 AND role_category='TASK';
