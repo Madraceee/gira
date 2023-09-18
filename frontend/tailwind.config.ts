@@ -16,5 +16,6 @@ const config: Config = {
     },
   },
   plugins: [],
+  darkMode : undefined
 }
 export default config

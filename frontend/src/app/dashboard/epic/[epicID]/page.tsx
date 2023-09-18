@@ -10,17 +10,17 @@ import { RootState } from "@/redux/store";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-
+import axios from "axios";
 
 export default function Page({params} : {params : {epicID : string}}){
 
-    const dipatch = useDispatch()
     const {setCurrectEpicID,currentEpicDetails,taskList,sprintList,epicPerms} = useEpic();
     const [isDetailsOpen,SetIsDetailsOpen] = useState<boolean>(false);
     const [isTaskEditorOpen,setIsTaskEditorOpen] = useState<boolean>(false);
     const [taskEditorContents, setTaskEditorContents] = useState<TaskEditorType>({} as TaskEditorType);
     const [showAddTask,setShowAddTask] = useState<boolean>(false)
 
+    setCurrectEpicID(params.epicID)
 
     const token = useSelector((state:RootState)=>state.user.token)
     const isLoggedIn = useSelector((state:RootState)=>state.user.isLoggedIn)
@@ -34,7 +34,9 @@ export default function Page({params} : {params : {epicID : string}}){
 
     useEffect(()=>{
         setCurrectEpicID(params.epicID)
-    },[])
+    },[params.epicID])
+
+
 
     const showTask = (taskID: string)=>{
 
@@ -55,10 +57,9 @@ export default function Page({params} : {params : {epicID : string}}){
             TASKLOG : task.TASKLOG,
             TASKREQ : task.TASKREQ,
             TASKSTARTDATE : task.TASKSTARTDATE,
-            perms : [],
             sprint : sprintList
         });
-        setIsTaskEditorOpen(true);
+        setIsTaskEditorOpen(true)
     }
 
     

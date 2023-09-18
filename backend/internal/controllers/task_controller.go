@@ -137,6 +137,25 @@ func (taskCfg *TaskConfig) FetchUsersTask(w http.ResponseWriter, r *http.Request
 
 }
 
+func (taskCfg *TaskConfig) FetchTaskPermissions(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+
+	taskID := chi.URLParam(r, "taskID")
+	parsedTaskId, err := uuid.Parse(taskID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Wrong ID")
+		return
+	}
+
+	ans, err := service.FetchTaskermissions(parsedTaskId, user.Id, taskCfg.DB, r.Context())
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Data Does not exist")
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, ans)
+	return
+}
+
 func (taskCfg *TaskConfig) UpdateTaskStatus(w http.ResponseWriter, r *http.Request, user *common.UserData) {
 	// MASTER can Update Tasks
 	// Assigned Members(Developer and Tester) can also change
@@ -178,139 +197,16 @@ func (taskCfg *TaskConfig) UpdateTaskStatus(w http.ResponseWriter, r *http.Reque
 	utils.RespondWithJSON(w, http.StatusOK, updatedTask)
 }
 
-func (taskCfg *TaskConfig) UpdateTaskEndDate(w http.ResponseWriter, r *http.Request, user *common.UserData) {
-	// CHANGE
-	role := strings.ToUpper(user.Role)
-	if role != "MASTER" && true {
-		utils.RespondWithError(w, http.StatusMethodNotAllowed, "Not Authorized to update Task end date")
-		return
-	}
-
-	// Parse request parameters
-	type parameters struct {
-		EpicID  uuid.UUID `json:"epic_id"`
-		TaskID  uuid.UUID `json:"task_id"`
-		EndDate time.Time `json:"end_date"`
-	}
-
-	decoder := json.NewDecoder(r.Body)
-	params := parameters{}
-	err := decoder.Decode(&params)
-	if err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
-		return
-	}
-
-	// Execute the SQL query to update task end date
-	updatedTask, err := taskCfg.DB.UpdateTaskEndDate(r.Context(), database.UpdateTaskEndDateParams{
-		TaskEpicID: params.EpicID,
-		TaskID:     params.TaskID,
-		TaskEndDate: sql.NullTime{
-			Time:  params.EndDate,
-			Valid: true,
-		},
-	})
-	if err != nil {
-		log.Printf("Error while updating task end date by %v : %v", user.Email, err.Error())
-		utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
-		return
-	}
-
-	utils.RespondWithJSON(w, http.StatusOK, updatedTask)
-}
-
-func (taskCfg *TaskConfig) UpdateTaskLog(w http.ResponseWriter, r *http.Request, user *common.UserData) {
-	role := strings.ToUpper(user.Role)
-	if role != "MASTER" && true {
-		utils.RespondWithError(w, http.StatusMethodNotAllowed, "Not Authorized to update Task log")
-		return
-	}
-
-	// Parse request parameters
-	type parameters struct {
-		EpicID uuid.UUID `json:"epic_id"`
-		TaskID uuid.UUID `json:"task_id"`
-		Log    string    `json:"log"`
-	}
-
-	decoder := json.NewDecoder(r.Body)
-	params := parameters{}
-	err := decoder.Decode(&params)
-	if err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
-		return
-	}
-
-	// Execute the SQL query to update task log
-	updatedTask, err := taskCfg.DB.UpdateTaskLog(r.Context(), database.UpdateTaskLogParams{
-		TaskEpicID: params.EpicID,
-		TaskID:     params.TaskID,
-		TaskLog: sql.NullString{
-			String: params.Log,
-			Valid:  true,
-		},
-	})
-	if err != nil {
-		log.Printf("Error while updating task log by %v : %v", user.Email, err.Error())
-		utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
-		return
-	}
-
-	utils.RespondWithJSON(w, http.StatusOK, updatedTask)
-}
-
-func (taskCfg *TaskConfig) UpdateTaskLink(w http.ResponseWriter, r *http.Request, user *common.UserData) {
-	role := strings.ToUpper(user.Role)
-	if role != "MASTER" && true {
-		utils.RespondWithError(w, http.StatusMethodNotAllowed, "Not Authorized to update Task link")
-		return
-	}
-
-	// Parse request parameters
-	type parameters struct {
-		EpicID uuid.UUID `json:"epic_id"`
-		TaskID uuid.UUID `json:"task_id"`
-		Link   string    `json:"link"`
-	}
-
-	decoder := json.NewDecoder(r.Body)
-	params := parameters{}
-	err := decoder.Decode(&params)
-	if err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
-		return
-	}
-
-	// Execute the SQL query to update task link
-	updatedTask, err := taskCfg.DB.UpdateTaskLink(r.Context(), database.UpdateTaskLinkParams{
-		TaskEpicID: params.EpicID,
-		TaskID:     params.TaskID,
-		TaskLink: sql.NullString{
-			String: params.Link,
-			Valid:  true,
-		},
-	})
-	if err != nil {
-		log.Printf("Error while updating task link by %v : %v", user.Email, err.Error())
-		utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
-		return
-	}
-
-	utils.RespondWithJSON(w, http.StatusOK, updatedTask)
-}
-
-func (taskCfg *TaskConfig) UpdateTaskSprintID(w http.ResponseWriter, r *http.Request, user *common.UserData) {
-	role := strings.ToUpper(user.Role)
-	if role != "MASTER" && true {
-		utils.RespondWithError(w, http.StatusMethodNotAllowed, "Not Authorized to update Task sprint ID")
-		return
-	}
+func (taskCfg *TaskConfig) UpdateTaskFull(w http.ResponseWriter, r *http.Request, user *common.UserData) {
 
 	// Parse request parameters
 	type parameters struct {
 		EpicID   uuid.UUID `json:"epic_id"`
 		TaskID   uuid.UUID `json:"task_id"`
 		SprintID int       `json:"sprint_id"`
+		Link     string    `json:"link"`
+		Log      string    `json:"log"`
+		Status   string    `json:"status"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -321,17 +217,59 @@ func (taskCfg *TaskConfig) UpdateTaskSprintID(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Execute the SQL query to update task sprint ID
-	updatedTask, err := taskCfg.DB.UpdateTaskSprintID(r.Context(), database.UpdateTaskSprintIDParams{
-		TaskEpicID: params.EpicID,
-		TaskID:     params.TaskID,
-		TaskSprintID: sql.NullInt32{
+	perms, err := service.FetchTaskermissions(params.TaskID, user.Id, taskCfg.DB, r.Context())
+	if err != nil {
+		utils.RespondWithError(w, http.StatusForbidden, "Forbidden")
+		return
+	}
+
+	isAllowed := false
+	for _, perm := range perms {
+		if perm == 3 {
+			isAllowed = true
+			break
+		}
+	}
+	if isAllowed == false {
+		utils.RespondWithError(w, http.StatusForbidden, "Forbidden")
+		return
+	}
+
+	sqlLink := sql.NullString{}
+	if len(params.Link) > 0 {
+		sqlLink = sql.NullString{
+			String: params.Link,
+			Valid:  true,
+		}
+	}
+
+	sqlLog := sql.NullString{}
+	if len(params.Log) > 0 {
+		sqlLog = sql.NullString{
+			String: params.Log,
+			Valid:  true,
+		}
+	}
+
+	sqlSprintID := sql.NullInt32{}
+	if params.SprintID > 0 {
+		sqlSprintID = sql.NullInt32{
 			Int32: int32(params.SprintID),
 			Valid: true,
-		},
+		}
+	}
+
+	updatedTask, err := taskCfg.DB.UpdateTaskFull(r.Context(), database.UpdateTaskFullParams{
+		TaskEpicID:   params.EpicID,
+		TaskID:       params.TaskID,
+		TaskStatus:   params.Status,
+		TaskLink:     sqlLink,
+		TaskLog:      sqlLog,
+		TaskSprintID: sqlSprintID,
 	})
+
 	if err != nil {
-		log.Printf("Error while updating task sprint ID by %v : %v", user.Email, err.Error())
+		log.Printf("Error while updating task by %v : %v", user.Email, err.Error())
 		utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}

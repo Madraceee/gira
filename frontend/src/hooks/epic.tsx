@@ -98,16 +98,15 @@ export type EpicInterface = {
     isLoading : boolean,
     setCurrectEpicID :  Dispatch<SetStateAction<string>>,
     submitTask : (taskName: string,taskReq: string, startDate: Date,endDate: Date)=>Promise<void>
+    updateTask: (taskId : string,req : string,link : string,log : string,status : string,sprintId: string)=>Promise<void>
 }
 
 
 // Type used for TaskEditor
 export type TaskEditorType = TaskDetails & {
-    perms : number[],
     sprint : SprintDetails[]
 }
     
-
 
 const epicContext = createContext<EpicInterface>({} as EpicInterface)
 
@@ -189,18 +188,17 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
         if(currentEpicID === ""){
             return
         }
+        console.log("Epic Provider",currentEpicID)
         getInfo()
-        
     },[currentEpicID])
 
 
     const submitTask = useCallback(async(taskName: string,taskReq: string, startDate: Date,endDate: Date)=>{
         startDate.setHours(0,0,0,0);
         endDate.setHours(0,0,0,0);
-
         try{
             const taskResponse = await axios.post("http://localhost:8080/task/createTask",{
-                "epic_id": currentEpicDetails.EpicID,
+                "epic_id": currentEpicID,
                 "name": taskName,
                 "req": taskReq,
                 "start_date": startDate,
@@ -219,10 +217,34 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
             dispatch(openModal({header:"",children:<ResultDisplay msg={"Failure"}/>}))
             console.log(err)
         }      
-    },[]);
+    },[currentEpicID]);
+
+
+    const updateTask = useCallback(async(taskId : string,req : string,link : string,log : string,status : string,sprintId: string)=>{
+        try{
+            const updateResponse = await axios.patch("http://localhost:8080/task/updateTaskFull",{
+                "epic_id": currentEpicID,
+                "task_id": taskId,
+                "sprint_id": (sprintId === "" ? 0 : parseInt(sprintId)),
+                "link": link,
+                "log": log,
+                "status": status
+            },{
+                headers : {Authorization: `Bearer ${token}`}
+            });
+
+            if(updateResponse.status === 200){
+                dispatch(openModal({header:"",children:<ResultDisplay msg={"Success"}/>}))
+                getInfo()
+            }
+        }catch(err:any){
+            dispatch(openModal({header:"",children:<ResultDisplay msg={"Failure"}/>}))
+            console.log(err)
+        }
+    },[currentEpicID])   
 
     return(
-        <epicContext.Provider value={{currentEpicDetails,taskList,epicPerms,setCurrectEpicID,isLoading,sprintList,submitTask}}>
+        <epicContext.Provider value={{currentEpicDetails,taskList,epicPerms,setCurrectEpicID,isLoading,sprintList,submitTask,updateTask}}>
             {children}
         </epicContext.Provider>
     )

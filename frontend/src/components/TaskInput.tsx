@@ -59,7 +59,7 @@ export default function TaskInput(){
             <input type="text" name="name" id="name" placeholder="Enter Task Name" className={InputClass} value={taskName} onChange={(e)=>setTaskName(e.target.value)}/>
             <textarea  name="req" id="req" placeholder="Enter Requirements" className={`${InputClass} h-12`} value={taskReq} onChange={(e)=>setTaskReq(e.target.value)}/>
             <div className="flex justify-between w-11/12">
-                <span className="text-black">Start Date:*</span>
+                <span className="text-black">Start Date:</span>
                 <input type="date" name="startDate" id="startDate" value={inputDate(startDate)} onChange={(e)=>setStartDate(new Date(e.target.value))}/>
             </div>
             <div className="flex justify-between w-11/12">

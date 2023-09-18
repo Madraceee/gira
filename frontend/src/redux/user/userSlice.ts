@@ -5,7 +5,7 @@ export type UserState = {
     email : string,
     name : string,
     role : string,
-    isLoggedIn: boolean
+    isLoggedIn: boolean,
 }
 
 export type ActionState = {
@@ -19,7 +19,7 @@ const initialState : UserState = {
     email: "",
     name: "",
     role: "",
-    isLoggedIn: false
+    isLoggedIn: false,
 }
 
 const Login = (state : UserState, action : ActionState) =>{
@@ -38,12 +38,20 @@ const Logout = (state : UserState) =>{
     state.isLoggedIn = false;
 }
 
+const SetEpic = (state: UserState,action: ActionState)=>{
+    state.email = state.email;
+    state.name = state.name;
+    state.token = state.token;
+    state.role = state.role;
+    state.isLoggedIn = true;
+}
+
 const userSlice = createSlice({
     name: "user",
     initialState,
     reducers :{
         login : (state,action)=>Login(state,action),
-        logout : (state)=>Logout(state)
+        logout : (state)=>Logout(state),
     }
 })
 

@@ -15,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className + " min-h-screen"}>
+      <body className={inter.className + " min-h-screen dark:bg-gradient-to-b dark:from-slate-200 dark:to-zinc-400 text-black"}>
         <Provider store={store}>
           <Modal />
           {children}

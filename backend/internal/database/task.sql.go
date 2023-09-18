@@ -55,114 +55,31 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 	return i, err
 }
 
-const updateTaskEndDate = `-- name: UpdateTaskEndDate :one
+const updateTaskFull = `-- name: UpdateTaskFull :one
 UPDATE task
-SET task_end_date=$3
+set task_status=$3,task_link=$4,task_log=$5,task_sprint_id=$6
 WHERE task_epic_id=$1 AND task_id=$2
 RETURNING task_epic_id, task_id, task_name, task_req, task_log, task_link, task_start_date, task_end_date, task_status, task_sprint_id
 `
 
-type UpdateTaskEndDateParams struct {
-	TaskEpicID  uuid.UUID
-	TaskID      uuid.UUID
-	TaskEndDate sql.NullTime
-}
-
-func (q *Queries) UpdateTaskEndDate(ctx context.Context, arg UpdateTaskEndDateParams) (Task, error) {
-	row := q.db.QueryRowContext(ctx, updateTaskEndDate, arg.TaskEpicID, arg.TaskID, arg.TaskEndDate)
-	var i Task
-	err := row.Scan(
-		&i.TaskEpicID,
-		&i.TaskID,
-		&i.TaskName,
-		&i.TaskReq,
-		&i.TaskLog,
-		&i.TaskLink,
-		&i.TaskStartDate,
-		&i.TaskEndDate,
-		&i.TaskStatus,
-		&i.TaskSprintID,
-	)
-	return i, err
-}
-
-const updateTaskLink = `-- name: UpdateTaskLink :one
-UPDATE task
-SET task_link=$3
-WHERE task_epic_id=$1 AND task_id=$2
-RETURNING task_epic_id, task_id, task_name, task_req, task_log, task_link, task_start_date, task_end_date, task_status, task_sprint_id
-`
-
-type UpdateTaskLinkParams struct {
-	TaskEpicID uuid.UUID
-	TaskID     uuid.UUID
-	TaskLink   sql.NullString
-}
-
-func (q *Queries) UpdateTaskLink(ctx context.Context, arg UpdateTaskLinkParams) (Task, error) {
-	row := q.db.QueryRowContext(ctx, updateTaskLink, arg.TaskEpicID, arg.TaskID, arg.TaskLink)
-	var i Task
-	err := row.Scan(
-		&i.TaskEpicID,
-		&i.TaskID,
-		&i.TaskName,
-		&i.TaskReq,
-		&i.TaskLog,
-		&i.TaskLink,
-		&i.TaskStartDate,
-		&i.TaskEndDate,
-		&i.TaskStatus,
-		&i.TaskSprintID,
-	)
-	return i, err
-}
-
-const updateTaskLog = `-- name: UpdateTaskLog :one
-UPDATE task
-SET task_log=$3
-WHERE task_epic_id=$1 AND task_id=$2
-RETURNING task_epic_id, task_id, task_name, task_req, task_log, task_link, task_start_date, task_end_date, task_status, task_sprint_id
-`
-
-type UpdateTaskLogParams struct {
-	TaskEpicID uuid.UUID
-	TaskID     uuid.UUID
-	TaskLog    sql.NullString
-}
-
-func (q *Queries) UpdateTaskLog(ctx context.Context, arg UpdateTaskLogParams) (Task, error) {
-	row := q.db.QueryRowContext(ctx, updateTaskLog, arg.TaskEpicID, arg.TaskID, arg.TaskLog)
-	var i Task
-	err := row.Scan(
-		&i.TaskEpicID,
-		&i.TaskID,
-		&i.TaskName,
-		&i.TaskReq,
-		&i.TaskLog,
-		&i.TaskLink,
-		&i.TaskStartDate,
-		&i.TaskEndDate,
-		&i.TaskStatus,
-		&i.TaskSprintID,
-	)
-	return i, err
-}
-
-const updateTaskSprintID = `-- name: UpdateTaskSprintID :one
-UPDATE task
-SET task_sprint_id=$3
-WHERE task_epic_id=$1 AND task_id=$2
-RETURNING task_epic_id, task_id, task_name, task_req, task_log, task_link, task_start_date, task_end_date, task_status, task_sprint_id
-`
-
-type UpdateTaskSprintIDParams struct {
+type UpdateTaskFullParams struct {
 	TaskEpicID   uuid.UUID
 	TaskID       uuid.UUID
+	TaskStatus   string
+	TaskLink     sql.NullString
+	TaskLog      sql.NullString
 	TaskSprintID sql.NullInt32
 }
 
-func (q *Queries) UpdateTaskSprintID(ctx context.Context, arg UpdateTaskSprintIDParams) (Task, error) {
-	row := q.db.QueryRowContext(ctx, updateTaskSprintID, arg.TaskEpicID, arg.TaskID, arg.TaskSprintID)
+func (q *Queries) UpdateTaskFull(ctx context.Context, arg UpdateTaskFullParams) (Task, error) {
+	row := q.db.QueryRowContext(ctx, updateTaskFull,
+		arg.TaskEpicID,
+		arg.TaskID,
+		arg.TaskStatus,
+		arg.TaskLink,
+		arg.TaskLog,
+		arg.TaskSprintID,
+	)
 	var i Task
 	err := row.Scan(
 		&i.TaskEpicID,

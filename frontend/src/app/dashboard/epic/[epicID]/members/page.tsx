@@ -75,7 +75,7 @@ export default function Page(){
                     Authorization: `Bearer ${token}`
                 }
             })
-            if(response.status === 200){
+            if(response.status === 202){
                 dispatch(openModal({header:"",children: <ResultDisplay msg={"Success"}/>}))
                 fetchDetails()
             }
@@ -104,9 +104,9 @@ export default function Page(){
                         <button className="bg-blue-500/50 p-2  rounded-md text-white shadow-lg " onClick={addMember}>Add Member</button>
                     </div>
                 }        
-                {membersList.map(member=>{
+                {membersList.map((member,index)=>{
                     return (
-                        <div className={`${style} gap-5  text-sm md:text-xl bg-white p-2 rounded-md`}>
+                        <div className={`${style} gap-5  text-sm md:text-xl bg-white p-2 rounded-md`} key={index}>
                             <span>{member.UsersName}</span>
                             <span>{member.UsersEmail}</span>
                             {epicPerms.find(perm=>perm===EpicPerms.REMOVEMEMBER.valueOf()) && member.UsersEmail !== email &&

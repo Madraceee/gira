@@ -33,7 +33,10 @@ export default function Page(){
                     }
                 })
 
-                setEpics(response.data)
+                if(response.data !== null){
+                    setEpics(response.data)
+                }
+
             }catch(err:any){
                 if(err.response){
                     console.log(err.response.status)
@@ -64,7 +67,7 @@ export default function Page(){
                     </div>
                 }                
                 { role === "MEMBER" && epics.length === 0 &&
-                    <p className="w-full text-center">Looks Empty, Come back after your Master has added you :)</p>
+                    <p className="w-full text-center text-xl">Looks Empty, Come back after your Scrum Master has added you :)</p>
                 }
             </div>
         </div>

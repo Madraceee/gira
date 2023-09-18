@@ -9,26 +9,8 @@ SET task_status=$3
 WHERE task_epic_id=$1 AND task_id=$2
 RETURNING *;
 
--- name: UpdateTaskEndDate :one
+-- name: UpdateTaskFull :one
 UPDATE task
-SET task_end_date=$3
-WHERE task_epic_id=$1 AND task_id=$2
-RETURNING *;
-
--- name: UpdateTaskLog :one
-UPDATE task
-SET task_log=$3
-WHERE task_epic_id=$1 AND task_id=$2
-RETURNING *;
-
--- name: UpdateTaskLink :one
-UPDATE task
-SET task_link=$3
-WHERE task_epic_id=$1 AND task_id=$2
-RETURNING *;
-
--- name: UpdateTaskSprintID :one
-UPDATE task
-SET task_sprint_id=$3
+set task_status=$3,task_link=$4,task_log=$5,task_sprint_id=$6
 WHERE task_epic_id=$1 AND task_id=$2
 RETURNING *;
