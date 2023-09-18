@@ -9,3 +9,7 @@ export const dateToString = (input : string) : string =>{
     const day = String(date.getDate())
     return `${day}-${month}-${year}`;
 }
+
+export const inputDate = (date: Date) : string=>{
+    return (date.getFullYear().toString()+"-"+(date.getMonth()+1).toString().padStart(2,"0")+"-"+date.getDate().toString().padStart(2,"0"))
+}

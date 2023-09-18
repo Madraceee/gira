@@ -16,6 +16,6 @@ func SprintRoute(r *chi.Mux, conn *sql.DB) {
 	}
 
 	r.Post("/sprint/createSprint", middleware.MiddlewareAuth(sprintApi.CreateSprint, sprintApi.DB))
-	r.Patch("/sprint/updateSprint", middleware.MiddlewareAuth(sprintApi.UpdateSprint, sprintApi.DB))
+	r.Delete("/sprint/deleteSprint", middleware.MiddlewareAuth(sprintApi.DeleteSprint, sprintApi.DB))
 	r.Get("/sprint/getSprints/{id}", middleware.MiddlewareAuth(sprintApi.GetSprints, sprintApi.DB))
 }

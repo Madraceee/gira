@@ -96,6 +96,22 @@ func (q *Queries) UpdateTaskFull(ctx context.Context, arg UpdateTaskFullParams) 
 	return i, err
 }
 
+const updateTaskSprintStatus = `-- name: UpdateTaskSprintStatus :exec
+UPDATE task
+SET task_sprint_id=NULL
+WHERE task_epic_id=$1 AND task_sprint_id=$2
+`
+
+type UpdateTaskSprintStatusParams struct {
+	TaskEpicID   uuid.UUID
+	TaskSprintID sql.NullInt32
+}
+
+func (q *Queries) UpdateTaskSprintStatus(ctx context.Context, arg UpdateTaskSprintStatusParams) error {
+	_, err := q.db.ExecContext(ctx, updateTaskSprintStatus, arg.TaskEpicID, arg.TaskSprintID)
+	return err
+}
+
 const updateTaskStatus = `-- name: UpdateTaskStatus :one
 UPDATE task
 SET task_status=$3

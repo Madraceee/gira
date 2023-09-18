@@ -18,7 +18,6 @@ INSERT INTO permission VALUES (102,'ADDTASK','User can add tasks, the user autom
 INSERT INTO permission VALUES (103,'REMOVETASK','User can remove tasks');
 INSERT INTO permission VALUES (104,'ADDSPRINT','User can add sprint');
 INSERT INTO permission VALUES (105,'REMOVESPRINT','User can remove sprint');
-INSERT INTO permission VALUES (106,'EDITSPRINT','User can edit sprint');
 
 -- +goose Down
 DROP TABLE permission;

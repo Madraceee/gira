@@ -13,7 +13,7 @@ export default function UserOptions(){
     
     const logoutUser = async()=>{
         
-        axios.get("http://localhost:8080/user/logout",{
+        axios.post("http://localhost:8080/user/logout",{
             headers : {
                 Authorization : `Bearer ${token}`
             }

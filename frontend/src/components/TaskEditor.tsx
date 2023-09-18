@@ -14,7 +14,7 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
     const [taskLink,setTaskLink] = useState<string>(task.TASKLINK);
     const [taskLog,setTaskLog] = useState<string>(task.TASKLOG);
     const [taskStatus,setTaskStatus] = useState<string>(task.TASKSTATUS);
-    const [taskSpringID,setTaskSpringID] = useState<string>(task.TASKSPRINTID);
+    const [taskSprintID,setTaskSprintID] = useState<string>(task.TASKSPRINTID);
     const [hasChanged,setHasChanged] = useState<boolean>(false);
     const [perms,setPerms] = useState<number[]>([]);
 
@@ -23,7 +23,11 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
     const [taskUpdateSelectedRole,setTaskUpdateSelectedRole] = useState<string>("")
     const [showMemberAdd,setShowMemberAdd] = useState<boolean>(false)
 
-    const {updateTask,addMemberToTask,taskRoles} = useEpic()
+    // Delete Member
+    const [taskDeleteEmail,setTaskDeleteEmail] = useState<string>("")
+    const [showMemberDelete, setShowMemberDelete] = useState<boolean>(false)
+
+    const {updateTask,addMemberToTask,deleteMemberFromTask,taskRoles} = useEpic()
 
     useEffect(()=>{
         if(task.TASKREQ !== taskReq){
@@ -42,13 +46,12 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
             setHasChanged(true)
             return
         }
-        if(task.TASKSPRINTID !== taskSpringID){
+        if(task.TASKSPRINTID !== taskSprintID){
             setHasChanged(true)
             return
         }
         setHasChanged(false)
-        setShowMemberAdd(false)
-    },[taskReq,taskLink,taskLog,taskStatus,taskSpringID])
+    },[taskReq,taskLink,taskLog,taskStatus,taskSprintID])
 
     useEffect(()=>{
 
@@ -73,9 +76,14 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
         setTaskLog(task.TASKLOG)
         setTaskReq(task.TASKREQ)
         setTaskStatus(task.TASKSTATUS)
-        setTaskSpringID(task.TASKSPRINTID)
+        setTaskSprintID(task.TASKSPRINTID)
+
         setTaskUpdateEmail("")
         setTaskUpdateSelectedRole(taskRoles[0])
+        setShowMemberAdd(false)
+
+        setTaskDeleteEmail("")        
+        setShowMemberDelete(false)
     },[task.TASKID])
 
     const taskFullUpdate = perms.find((perm)=>perm === TaskRoles.UPDATETASKFULL.valueOf()) === undefined ? false : true
@@ -92,7 +100,7 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
                 <span className={headingStyle}>Link: </span>
                 <ContentEditable
                     html={taskLink}
-                    className={`min-w-[50px] max-w-full max-h-16 min-h-[20px] overflow-y-auto inline-block ${taskFullUpdate ? "border-black border-2 rounded-sm" : ""} `}
+                    className={`min-w-[50px] max-w-full max-h-16 min-h-[20px] overflow-x-auto inline-block ${taskFullUpdate ? "border-black border-2 rounded-sm" : ""} `}
                     onChange={(e)=>setTaskLink(e.target.value)}
                     disabled={!taskFullUpdate}
 
@@ -102,7 +110,7 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
                 <span className={headingStyle}>Logs:</span>
                 <ContentEditable
                     html={taskLog}
-                    className={`min-w-[100px] max-w-full max-h-40 min-h-[20px] overflow-y-auto inline-block ${taskFullUpdate ? "border-black border-2 rounded-sm" : ""} `}
+                    className={`min-w-[100px] max-w-full max-h-80 min-h-[20px] overflow-y-auto inline-block ${taskFullUpdate ? "border-black border-2 rounded-sm" : ""} `}
                     onChange={(e)=>setTaskLog(e.target.value)}
                     disabled={!taskFullUpdate}
                 />  
@@ -120,7 +128,8 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
             </p>
 
             <p className="w-full flex items-center gap-1"><span className={headingStyle}>Sprint ID:</span>
-                <select onChange={(e)=>setTaskSpringID(e.target.value)} defaultValue={taskSpringID} disabled={!taskFullUpdate} className="min-w-[100px] text-right pr-2 bg-[#d6dbdc] text-black p-1 rounded-md shadow-sm">
+                <select onChange={(e)=>setTaskSprintID(e.target.value)} value={task.TASKSPRINTID} disabled={!taskFullUpdate} className="min-w-[100px] text-right pr-2 bg-[#d6dbdc] text-black p-1 rounded-md shadow-sm">
+                    <option value={0} >Select</option>
                     {task.sprint.map((sprint,index)=>{
                         return(
                             <option value={sprint.SprintID} key={index}>{sprint.SprintID}</option>
@@ -134,12 +143,13 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
                 <p className="w-1/2"><span className={headingStyle}>End Date: </span>{task.TASKENDDATE}</p>
             </div>
             <div className="flex flex-row justify-between gap-2">
-                <button disabled={perms.find((perm=> perm === TaskRoles.ADDMEMBERS.valueOf())) === undefined ? true : false} className={`bg-slate-600 text-white p-1 pl-2 pr-2 rounded-md disabled:cursor-not-allowed`} onClick={()=>{setShowMemberAdd(state=> !state)}}>Add Member</button>
-                <button disabled={!hasChanged} className="bg-blue-400 text-white p-1 pl-2 pr-2 rounded-md disabled:bg-blue-100" onClick={()=>updateTask(task.TASKID,taskReq,taskLink,taskLog,taskStatus,taskSpringID)}>Save</button>
+                <button disabled={perms.find((perm=> perm === TaskRoles.ADDMEMBERS.valueOf())) === undefined ? true : false} className={`bg-slate-600 text-white p-1 pl-2 pr-2 rounded-md disabled:cursor-not-allowed`} onClick={()=>{setShowMemberAdd(state=> !state)}}>{showMemberAdd ? "Close" : "Add Member"}</button>
+                <button disabled={perms.find((perm=> perm === TaskRoles.REMOVEMEMBERS.valueOf())) === undefined ? true : false} className={`bg-slate-600 text-white p-1 pl-2 pr-2 rounded-md disabled:cursor-not-allowed`} onClick={()=>{setShowMemberDelete(state=> !state)}}>{showMemberDelete? "Close" : "Delete Member"}</button>
+                <button disabled={!hasChanged} className="bg-blue-400 text-white p-1 pl-2 pr-2 rounded-md disabled:bg-blue-100" onClick={()=>updateTask(task.TASKID,taskReq,taskLink,taskLog,taskStatus,taskSprintID)}>Save</button>
             </div>
             { showMemberAdd &&
                 <div className="flex flex-row justify-between gap-2 bg-[#d6dbdc]  p-2 rounded-lg">
-                    <input type="email" className=" text-black p-1 rounded-md shadow-sm  w-1/2" placeholder="Enter Email" value={taskUpdateEmail} onChange={(e)=>setTaskUpdateEmail(e.target.value)}/>
+                    <input type="email" className=" text-black p-1 rounded-md shadow-sm  w-1/2" placeholder="Enter Email to Add" value={taskUpdateEmail} onChange={(e)=>setTaskUpdateEmail(e.target.value)}/>
                     <select onChange={(e)=>setTaskUpdateSelectedRole(e.target.value)} defaultValue={taskUpdateSelectedRole} className="min-w-[100px] text-right pl-2 pr-2 bg-[#d6dbdc] text-black p-1 rounded-md shadow-sm border-black border-2">
                         {taskRoles.map((role,index)=>{
                             return(
@@ -147,7 +157,13 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
                             )
                         })}
                     </select>
-                    <button className="bg-blue-400 text-white p-1 pl-2 pr-2 rounded-md cursor-pointer" onClick={()=>addMemberToTask(task.TASKID,taskUpdateEmail,taskUpdateSelectedRole)}>Add</button>
+                    <button className="bg-green-400 text-white p-1 pl-2 pr-2 rounded-md cursor-pointer" onClick={()=>addMemberToTask(task.TASKID,taskUpdateEmail,taskUpdateSelectedRole)}>Add</button>
+                </div>
+            }
+            { showMemberDelete &&
+                <div className="flex flex-row justify-between gap-2 bg-[#d6dbdc]  p-2 rounded-lg">
+                    <input type="email" className=" text-black p-1 rounded-md shadow-sm  w-1/2" placeholder="Enter Email to Remove" value={taskDeleteEmail} onChange={(e)=>setTaskDeleteEmail(e.target.value)}/>
+                    <button className="bg-red-400 text-white p-1 pl-2 pr-2 rounded-md cursor-pointer" onClick={()=>deleteMemberFromTask(task.TASKID,taskDeleteEmail)}>Remove</button>
                 </div>
             }
             

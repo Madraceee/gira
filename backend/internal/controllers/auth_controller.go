@@ -10,6 +10,7 @@ import (
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/database"
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/utils"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -22,6 +23,7 @@ type payload struct {
 	Email    string    `json:"email"`
 	Name     string    `json:"name"`
 	Role     string    `json:"role"`
+	ID       uuid.UUID `json:"id"`
 	ExpireAt time.Time `json:"expire_at"`
 }
 
@@ -73,6 +75,7 @@ func (authCfg *AuthConfig) Login(w http.ResponseWriter, r *http.Request) {
 			Email:    user.UsersEmail,
 			Name:     user.UsersName,
 			Role:     user.UsersType,
+			ID:       user.UsersID,
 			ExpireAt: user_auth.UserAuthTimestamp.Add(time.Hour),
 		})
 		return
@@ -107,6 +110,7 @@ func (authCfg *AuthConfig) Login(w http.ResponseWriter, r *http.Request) {
 		Email:    user.UsersEmail,
 		Name:     user.UsersName,
 		Role:     user.UsersType,
+		ID:       user.UsersID,
 		ExpireAt: time.Now().Add(time.Hour),
 	})
 }

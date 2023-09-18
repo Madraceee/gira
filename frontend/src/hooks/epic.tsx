@@ -100,7 +100,10 @@ export type EpicInterface = {
     setCurrectEpicID :  Dispatch<SetStateAction<string>>,
     submitTask : (taskName: string,taskReq: string, startDate: Date,endDate: Date)=>Promise<void>
     updateTask: (taskId : string,req : string,link : string,log : string,status : string,sprintId: string)=>Promise<void>,
-    addMemberToTask: (taskId:string,email:string,role:string) => Promise<void>
+    addMemberToTask: (taskId:string,email:string,role:string) => Promise<void>,
+    deleteMemberFromTask : (taskId:string,email:string) => Promise<void>,
+    addSprint: (startDate : string,endDate:string)=>Promise<void>
+    deleteSprint: (sprintID : number )=>Promise<void>
 }
 
 
@@ -262,6 +265,7 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
         }
     },[currentEpicID])   
 
+    // Add Member to a task
     const addMemberToTask = useCallback(async(taskId:string,email:string,role:string) =>{
         try{
             const addMemberResponse = await axios.post(`http://localhost:8080/task/addMemberToTask`,{
@@ -282,8 +286,79 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
         }
     },[currentEpicID])
 
+    // Delete Member from task
+    const deleteMemberFromTask = useCallback(async(taskId:string,email:string) =>{
+        try{
+            const addMemberResponse = await axios.delete(`http://localhost:8080/task/deleteMemberFromTask`,{
+                data:{
+                    "task_id": taskId,
+                    "member_email": email,
+                },
+                headers: { 
+                    Authorization: `Bearer ${token}`
+                }               
+            },)
+
+            if(addMemberResponse.status === 200){
+                dispatch(openModal({header:"Add Member",children: <ResultDisplay msg={"Success"}/>}))
+            }
+        }catch(err){
+            dispatch(openModal({header:"Add Member",children: <ResultDisplay msg={"Failure"}/>}))
+            console.log(err)
+        }
+    },[currentEpicID])
+
+    //Add Sprint
+    const addSprint = useCallback(async(startDate : string,endDate:string)=>{
+        try{
+            const sprintRespone = await axios.post("http://localhost:8080/sprint/createSprint",{
+                "epic_id": currentEpicID,
+                "start_date": startDate,
+                "end_date": endDate
+            },{
+                headers : {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+
+            if(sprintRespone.status === 200){
+                dispatch(openModal({headers: "" , children:<ResultDisplay msg={"Success"}/>})) 
+                getInfo()
+            }
+        }catch(err){
+            console.log(err)
+            dispatch(openModal({headers: "" , children:<ResultDisplay msg={"Failure"}/>})) 
+            return;
+        }
+    },[currentEpicID])
+
+    // Delete Sprint
+    const deleteSprint = useCallback(async(sprintID : number)=>{
+        try{
+            const sprintRespone = await axios.delete("http://localhost:8080/sprint/deleteSprint",{
+                    headers : {
+                        Authorization: `Bearer ${token}`
+                    },
+                    data: {
+                            "epic_id": currentEpicID,
+                            "sprint_id": sprintID
+                    }
+                })
+
+                if(sprintRespone.status === 200){
+                    dispatch(openModal({headers: "" , children:<ResultDisplay msg={"Success"}/>})) 
+                    getInfo()
+                }
+        }catch(err){
+            console.log(err)
+            dispatch(openModal({headers: "" , children:<ResultDisplay msg={"Failure"}/>})) 
+            return;
+        }
+    },[currentEpicID])
+
+
     return(
-        <epicContext.Provider value={{currentEpicDetails,taskList,epicPerms,taskRoles,setCurrectEpicID,isLoading,sprintList,submitTask,updateTask,addMemberToTask}}>
+        <epicContext.Provider value={{currentEpicDetails,taskList,epicPerms,taskRoles,setCurrectEpicID,isLoading,sprintList,submitTask,updateTask,addMemberToTask,deleteMemberFromTask,addSprint,deleteSprint}}>
             {children}
         </epicContext.Provider>
     )

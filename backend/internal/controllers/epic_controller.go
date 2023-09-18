@@ -85,7 +85,7 @@ func (epicCfg *EpicConfig) CreateEpic(w http.ResponseWriter, r *http.Request, us
 	})
 
 	// Assigning Permissions to MASTER
-	permissions := []int{100, 101, 102, 103, 104, 105, 106}
+	permissions := []int{100, 101, 102, 103, 104, 105}
 	for _, id := range permissions {
 		_, err := epicCfg.DB.EnterPerms(r.Context(), database.EnterPermsParams{
 			RolePermissionRoleID:       epicRole.RoleID,
@@ -237,7 +237,7 @@ func (epicCfg *EpicConfig) DeleteMemberFromEpic(w http.ResponseWriter, r *http.R
 			}
 
 			// Remove From task_assignemnt table
-			err = epicCfg.DB.DeleteUserFromTask(r.Context(), id)
+			err = epicCfg.DB.DeleteUserFromAllTask(r.Context(), id)
 			if err != nil {
 				log.Printf("Cannot Remove Member %v executed by %v : %v", id, user.Email, err)
 				utils.RespondWithError(w, http.StatusInternalServerError, "Server Error")

@@ -1,19 +1,5 @@
 package controllers
 
-// ROLES
-// MASTER -> ALL PERMS
-// Reviewer -> View only
-// Tester-> View only, change status and log when status is TESTING
-// Developer-> Full control of the TASK
-
-// Change to role based. No need to check for user global role,
-// Add service to take user, task, epic and return all the permissions
-// Each function can then decide what to do
-
-// --------------------
-// BREAKING
-// --------------------
-
 import (
 	"database/sql"
 	"encoding/json"
@@ -297,6 +283,7 @@ func (taskCfg *TaskConfig) GetAllPermsOfTask(w http.ResponseWriter, r *http.Requ
 	utils.RespondWithJSON(w, http.StatusOK, roles)
 }
 
+// Assign Task to Member
 func (taskCfg *TaskConfig) AddUserToTask(w http.ResponseWriter, r *http.Request, user *common.UserData) {
 
 	type parameter struct {
@@ -311,6 +298,12 @@ func (taskCfg *TaskConfig) AddUserToTask(w http.ResponseWriter, r *http.Request,
 	err := decoder.Decode(&params)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
+		return
+	}
+
+	// USER CANNOT UPDATE SELF
+	if user.Email == params.MemberEmail {
+		utils.RespondWithError(w, http.StatusBadRequest, "Cannot update Self")
 		return
 	}
 
@@ -355,7 +348,31 @@ func (taskCfg *TaskConfig) AddUserToTask(w http.ResponseWriter, r *http.Request,
 		RoleName:   params.RoleName,
 	})
 
-	// Adding Creator as developer of task
+	//Check whether record exisits, if so update the record
+	records, err := taskCfg.DB.GetUsersTask(r.Context(), database.GetUsersTaskParams{
+		TaskEpicID:            params.EpicID,
+		TaskAssignmentUsersID: memberID,
+	})
+
+	if len(records) != 0 {
+		// Record exits , update record
+		err = taskCfg.DB.UpdateUserTask(r.Context(), database.UpdateUserTaskParams{
+			TaskAssignmentTaskID:  params.TaskID,
+			TaskAssignmentEpicID:  params.EpicID,
+			TaskAssignmentUsersID: memberID,
+			TaskAssignmentRoleID:  roleId,
+		})
+		if err != nil {
+			utils.RespondWithError(w, http.StatusBadRequest, "Cannot update Record")
+			return
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, "Updated")
+		return
+	}
+
+	// If record does not exist
+	// Adding Member to task_assignment
 	task, err := taskCfg.DB.AddUserToTask(r.Context(), database.AddUserToTaskParams{
 		TaskAssignmentTaskID:  params.TaskID,
 		TaskAssignmentEpicID:  params.EpicID,
@@ -369,5 +386,63 @@ func (taskCfg *TaskConfig) AddUserToTask(w http.ResponseWriter, r *http.Request,
 	}
 
 	utils.RespondWithJSON(w, http.StatusOK, task)
+	return
+}
+
+// Remove Member from task
+// USER CAN DELETE THEMSELVES FROM TASK IF NEEDED
+func (taskCfg *TaskConfig) DeleteUserFromTask(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+
+	type parameter struct {
+		TaskID      uuid.UUID `json:"task_id"`
+		MemberEmail string    `json:"member_email"`
+	}
+
+	params := parameter{}
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&params)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
+		return
+	}
+
+	perms, err := service.FetchTaskermissions(params.TaskID, user.Id, taskCfg.DB, r.Context())
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
+		return
+	}
+
+	isAllowed := false
+	for _, perm := range perms {
+		if perm == 5 {
+			isAllowed = true
+			break
+		}
+	}
+
+	if isAllowed == false {
+		utils.RespondWithError(w, http.StatusForbidden, "Forbidden")
+		return
+	}
+
+	// Get Member ID from email
+	memberID, err := taskCfg.DB.GetIDFromEmail(r.Context(), params.MemberEmail)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "User not found")
+		return
+	}
+
+	// Deleting User from task_assignment
+	err = taskCfg.DB.DeleteUserFromTask(r.Context(), database.DeleteUserFromTaskParams{
+		TaskAssignmentUsersID: memberID,
+		TaskAssignmentTaskID:  params.TaskID,
+	})
+	if err != nil {
+		log.Printf("Cannot Delete user from task : %v", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Cannot Delete User from task assignment")
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, "Success")
 	return
 }

@@ -2,6 +2,7 @@
 
 import { useEpic } from "@/hooks/epic"
 import { RootState } from "@/redux/store"
+import { inputDate } from "@/utils/helper"
 import { useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 
@@ -42,9 +43,6 @@ export default function TaskInput(){
         submitTask(taskName,taskReq,startDate,endDate)
     }
 
-    const inputDate = (date: Date) : string=>{
-        return (date.getFullYear().toString()+"-"+(date.getMonth()+1).toString().padStart(2,"0")+"-"+date.getDate().toString().padStart(2,"0"))
-    }
 
     useEffect(()=>{
         setTaskName("")

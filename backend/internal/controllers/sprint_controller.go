@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/common"
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/database"
+	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/service"
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -19,6 +21,7 @@ type SprintConfig struct {
 	DB *database.Queries
 }
 
+// Update RUle
 func (sprintCfg *SprintConfig) CreateSprint(w http.ResponseWriter, r *http.Request, user *common.UserData) {
 	// Allow only MASTERS to create SPRINT
 	role := strings.ToUpper(user.Role)
@@ -57,64 +60,64 @@ func (sprintCfg *SprintConfig) CreateSprint(w http.ResponseWriter, r *http.Reque
 	utils.RespondWithJSON(w, 200, sprint)
 }
 
-func (sprintCfg *SprintConfig) UpdateSprint(w http.ResponseWriter, r *http.Request, user *common.UserData) {
-	// Allow only MASTERS to create SPRINT
-	role := strings.ToUpper(user.Role)
-	if role != "MASTER" {
-		utils.RespondWithError(w, http.StatusMethodNotAllowed, "Not Authorized to create EPIC")
+func (sprintCfg *SprintConfig) DeleteSprint(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+	type parameters struct {
+		SprintID int32     `json:"sprint_id"`
+		EpicID   uuid.UUID `json:"epic_id"`
 	}
 
-	// Input from user to Update an SPRINT
-	type parameters struct {
-		EpicID   uuid.UUID `json:"epic_id"`
-		SprintID int       `json:"sprint_id"`
-		End_date time.Time `json:"end_date"`
-	}
-	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
+	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&params)
 	if err != nil {
-		log.Print(err)
-		utils.RespondWithError(w, 400, "Invalid Input")
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
 		return
 	}
 
-	// Make sure EPIC_ID and SPRINT_ID is present
-	if params.EpicID == uuid.Nil || params.SprintID == 0 {
-		utils.RespondWithError(w, http.StatusBadRequest, "Epic Value OR Sprint Value not given")
+	perms, err := service.FetchEpicPermissions(params.EpicID, user.Id, sprintCfg.DB, r.Context())
+	if err != nil {
+		utils.RespondWithError(w, http.StatusForbidden, "No permission")
 		return
 	}
 
-	// Get Epic from DB
-	record, err := sprintCfg.DB.GetSprintWithOwner(r.Context(), database.GetSprintWithOwnerParams{
-		EpicID:   params.EpicID,
-		SprintID: int32(params.SprintID),
+	isAllowed := false
+	for _, perm := range perms {
+		if perm == 105 {
+			isAllowed = true
+			break
+		}
+	}
+
+	if isAllowed == false {
+		utils.RespondWithError(w, http.StatusForbidden, "No permission")
+		return
+	}
+
+	err = sprintCfg.DB.UpdateTaskSprintStatus(r.Context(), database.UpdateTaskSprintStatusParams{
+		TaskEpicID: params.EpicID,
+		TaskSprintID: sql.NullInt32{
+			Int32: params.SprintID,
+			Valid: true,
+		},
+	})
+	if err != nil {
+		log.Printf("Cannot delete sprint : %v", err)
+		utils.RespondWithError(w, http.StatusBadRequest, "Wrong input")
+		return
+	}
+
+	err = sprintCfg.DB.DeleteSprint(r.Context(), database.DeleteSprintParams{
+		SprintID:     params.SprintID,
+		SprintEpicID: params.EpicID,
 	})
 
 	if err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, "No Record found")
+		log.Printf("Cannot delete sprint : %v", err)
+		utils.RespondWithError(w, http.StatusBadRequest, "Wrong input")
 		return
 	}
 
-	// Check whether the user is the owner of the EPIC
-	if user.Id != record.EpicOwner {
-		utils.RespondWithError(w, http.StatusUnauthorized, "Only Owner can update Sprint")
-		return
-	}
-
-	sprint, err := sprintCfg.DB.UpdateSprint(r.Context(), database.UpdateSprintParams{
-		SprintEpicID:  params.EpicID,
-		SprintID:      int32(params.SprintID),
-		SprintEndDate: params.End_date,
-	})
-
-	if err != nil {
-		log.Printf("Error while updating SPRINT By %v : %v", user.Email, err.Error())
-		utils.RespondWithError(w, http.StatusBadRequest, "Input Error")
-		return
-	}
-
-	utils.RespondWithJSON(w, http.StatusOK, sprint)
+	utils.RespondWithJSON(w, http.StatusOK, "Success")
 }
 
 // Get the List of sprint for the EPIC ID

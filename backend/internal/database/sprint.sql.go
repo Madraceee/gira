@@ -36,6 +36,21 @@ func (q *Queries) CreateSprint(ctx context.Context, arg CreateSprintParams) (Spr
 	return i, err
 }
 
+const deleteSprint = `-- name: DeleteSprint :exec
+DELETE from sprint
+WHERE sprint_id=$1 AND sprint_epic_id=$2
+`
+
+type DeleteSprintParams struct {
+	SprintID     int32
+	SprintEpicID uuid.UUID
+}
+
+func (q *Queries) DeleteSprint(ctx context.Context, arg DeleteSprintParams) error {
+	_, err := q.db.ExecContext(ctx, deleteSprint, arg.SprintID, arg.SprintEpicID)
+	return err
+}
+
 const getSprintWithOwner = `-- name: GetSprintWithOwner :one
 SELECT sprint_id, epic_id , epic_owner FROM sprint
 JOIN epic
@@ -100,29 +115,4 @@ func (q *Queries) GetSprintsOfEpic(ctx context.Context, arg GetSprintsOfEpicPara
 		return nil, err
 	}
 	return items, nil
-}
-
-const updateSprint = `-- name: UpdateSprint :one
-UPDATE sprint
-SET sprint_end_date=$3
-WHERE sprint_epic_id=$1 AND sprint_id=$2
-RETURNING sprint_epic_id, sprint_id, sprint_start_date, sprint_end_date
-`
-
-type UpdateSprintParams struct {
-	SprintEpicID  uuid.UUID
-	SprintID      int32
-	SprintEndDate time.Time
-}
-
-func (q *Queries) UpdateSprint(ctx context.Context, arg UpdateSprintParams) (Sprint, error) {
-	row := q.db.QueryRowContext(ctx, updateSprint, arg.SprintEpicID, arg.SprintID, arg.SprintEndDate)
-	var i Sprint
-	err := row.Scan(
-		&i.SprintEpicID,
-		&i.SprintID,
-		&i.SprintStartDate,
-		&i.SprintEndDate,
-	)
-	return i, err
 }

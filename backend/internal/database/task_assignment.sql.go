@@ -43,13 +43,28 @@ func (q *Queries) AddUserToTask(ctx context.Context, arg AddUserToTaskParams) (T
 	return i, err
 }
 
-const deleteUserFromTask = `-- name: DeleteUserFromTask :exec
+const deleteUserFromAllTask = `-- name: DeleteUserFromAllTask :exec
 DELETE FROM task_assignment
 WHERE task_assignment_users_id=$1
 `
 
-func (q *Queries) DeleteUserFromTask(ctx context.Context, taskAssignmentUsersID uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deleteUserFromTask, taskAssignmentUsersID)
+func (q *Queries) DeleteUserFromAllTask(ctx context.Context, taskAssignmentUsersID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteUserFromAllTask, taskAssignmentUsersID)
+	return err
+}
+
+const deleteUserFromTask = `-- name: DeleteUserFromTask :exec
+DELETE FROM task_assignment
+WHERE task_assignment_users_id=$1 AND task_assignment_task_id=$2
+`
+
+type DeleteUserFromTaskParams struct {
+	TaskAssignmentUsersID uuid.UUID
+	TaskAssignmentTaskID  uuid.UUID
+}
+
+func (q *Queries) DeleteUserFromTask(ctx context.Context, arg DeleteUserFromTaskParams) error {
+	_, err := q.db.ExecContext(ctx, deleteUserFromTask, arg.TaskAssignmentUsersID, arg.TaskAssignmentTaskID)
 	return err
 }
 
@@ -108,4 +123,27 @@ func (q *Queries) GetUsersTask(ctx context.Context, arg GetUsersTaskParams) ([]G
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateUserTask = `-- name: UpdateUserTask :exec
+UPDATE task_assignment 
+SET task_assignment_role_id=$4
+WHERE task_assignment_task_id=$1 AND task_assignment_epic_id=$2 AND task_assignment_users_id=$3
+`
+
+type UpdateUserTaskParams struct {
+	TaskAssignmentTaskID  uuid.UUID
+	TaskAssignmentEpicID  uuid.UUID
+	TaskAssignmentUsersID uuid.UUID
+	TaskAssignmentRoleID  int32
+}
+
+func (q *Queries) UpdateUserTask(ctx context.Context, arg UpdateUserTaskParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserTask,
+		arg.TaskAssignmentTaskID,
+		arg.TaskAssignmentEpicID,
+		arg.TaskAssignmentUsersID,
+		arg.TaskAssignmentRoleID,
+	)
+	return err
 }

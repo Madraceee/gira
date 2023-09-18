@@ -63,7 +63,7 @@ export default function Page(){
             
                 {role === "MASTER" && 
                     <div className={`${epicBoxDesign} flex justify-center items-center `}>
-                        <p className="w-full text-center text-2xl">+ Create Epic</p>
+                        <p className="w-full text-center text-2xl" onClick={()=>router.push("/dashboard/epic/createEpic")}>+ Create Epic</p>
                     </div>
                 }                
                 { role === "MEMBER" && epics.length === 0 &&

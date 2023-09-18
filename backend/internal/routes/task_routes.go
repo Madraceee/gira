@@ -25,4 +25,5 @@ func TaskRoute(r *chi.Mux, conn *sql.DB) {
 	r.Patch("/task/updateStatus", middleware.MiddlewareAuth(usrApi.UpdateTaskStatus, usrApi.DB))
 	r.Get("/task/getRolesForTasks/{epicID}", middleware.MiddlewareAuth(usrApi.GetAllPermsOfTask, usrApi.DB))
 	r.Post("/task/addMemberToTask", middleware.MiddlewareAuth(usrApi.AddUserToTask, usrApi.DB))
+	r.Delete("/task/deleteMemberFromTask", middleware.MiddlewareAuth(usrApi.DeleteUserFromTask, usrApi.DB))
 }

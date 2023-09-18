@@ -64,10 +64,9 @@ export default function Page({params} : {params : {epicID : string}}){
     return(
         <div className="w-full h-full flex flex-col gap-4 p-2 pt-5">
             <div className="w-full flex flex-col md:flex-row md:justify-between">
-                
                 <span className="text-2xl md:text-3xl lg:text-5xl font-bold text-center">{currentEpicDetails.EpicName}</span>
                 <div className="flex gap-2 justify-between">
-                    <button className="bg-black/80 p-2 rounded-md text-white shadow-lg w-full" onClick={()=>router.push(`/dashboard/epic/${currentEpicDetails.EpicID}/members`)}>View Members</button>
+                    <button className="bg-black/80 p-2 rounded-md text-white shadow-lg w-full" onClick={()=>router.push(`/dashboard/epic/${currentEpicDetails.EpicID}/options`)}>Options</button>
                     <button className="bg-blue-500/50 p-2 rounded-md text-white shadow-lg w-full" onClick={()=>router.push("/dashboard")}>Go To Dashboard</button>
                 </div>
             </div>
