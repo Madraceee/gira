@@ -156,6 +156,7 @@ func (taskCfg *TaskConfig) FetchTaskPermissions(w http.ResponseWriter, r *http.R
 	return
 }
 
+// Update FRONTEND and Backend
 func (taskCfg *TaskConfig) UpdateTaskStatus(w http.ResponseWriter, r *http.Request, user *common.UserData) {
 	// MASTER can Update Tasks
 	// Assigned Members(Developer and Tester) can also change
@@ -275,4 +276,98 @@ func (taskCfg *TaskConfig) UpdateTaskFull(w http.ResponseWriter, r *http.Request
 	}
 
 	utils.RespondWithJSON(w, http.StatusOK, updatedTask)
+}
+
+// Get The Roles for a Task
+func (taskCfg *TaskConfig) GetAllPermsOfTask(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+
+	epicID := chi.URLParam(r, "epicID")
+	parsedEpicID, err := uuid.Parse(epicID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Wrong ID")
+		return
+	}
+
+	roles, err := taskCfg.DB.GetRolesForTasksForEpic(r.Context(), parsedEpicID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Wrong ID")
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, roles)
+}
+
+func (taskCfg *TaskConfig) AddUserToTask(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+
+	type parameter struct {
+		EpicID      uuid.UUID `json:"epic_id"`
+		TaskID      uuid.UUID `json:"task_id"`
+		MemberEmail string    `json:"member_email"`
+		RoleName    string    `json:"role_name"`
+	}
+
+	params := parameter{}
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&params)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
+		return
+	}
+
+	perms, err := service.FetchTaskermissions(params.TaskID, user.Id, taskCfg.DB, r.Context())
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
+		return
+	}
+
+	isAllowed := false
+	for _, perm := range perms {
+		if perm == 4 {
+			isAllowed = true
+			break
+		}
+	}
+
+	if isAllowed == false {
+		utils.RespondWithError(w, http.StatusForbidden, "Forbidden")
+		return
+	}
+
+	// Get Member ID from email
+	memberID, err := taskCfg.DB.GetIDFromEmail(r.Context(), params.MemberEmail)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "User not found")
+		return
+	}
+
+	// Check whether the member is part of the EPIC
+	_, err = taskCfg.DB.CheckMemberInEpic(r.Context(), database.CheckMemberInEpicParams{
+		EpicMembersEpicID: params.EpicID,
+		EpicMembersUserID: memberID,
+	})
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "User does not exist in Epic")
+		return
+	}
+
+	roleId, _ := taskCfg.DB.GetRoleIDFromRoleName(r.Context(), database.GetRoleIDFromRoleNameParams{
+		RoleEpicID: params.EpicID,
+		RoleName:   params.RoleName,
+	})
+
+	// Adding Creator as developer of task
+	task, err := taskCfg.DB.AddUserToTask(r.Context(), database.AddUserToTaskParams{
+		TaskAssignmentTaskID:  params.TaskID,
+		TaskAssignmentEpicID:  params.EpicID,
+		TaskAssignmentUsersID: memberID,
+		TaskAssignmentRoleID:  roleId,
+	})
+	if err != nil {
+		log.Printf("Cannot assign user to task : %v", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Cannot assign user to task")
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, task)
+	return
 }

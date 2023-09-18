@@ -96,9 +96,11 @@ export type EpicInterface = {
     sprintList: SprintDetails[]
     epicPerms : number[],
     isLoading : boolean,
+    taskRoles : string[],
     setCurrectEpicID :  Dispatch<SetStateAction<string>>,
     submitTask : (taskName: string,taskReq: string, startDate: Date,endDate: Date)=>Promise<void>
-    updateTask: (taskId : string,req : string,link : string,log : string,status : string,sprintId: string)=>Promise<void>
+    updateTask: (taskId : string,req : string,link : string,log : string,status : string,sprintId: string)=>Promise<void>,
+    addMemberToTask: (taskId:string,email:string,role:string) => Promise<void>
 }
 
 
@@ -118,6 +120,7 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
     const [taskList,setTaskList] = useState<TaskDetails[]>([] as TaskDetails[])
     const [sprintList,setSprintList] = useState<SprintDetails[]>([] as SprintDetails[])
     const [epicPerms, setEpicPerms] = useState<number[]>([] as number[])
+    const [taskRoles, setTaskRoles] = useState<string[]>([] as string[])
     
     const [isLoading,setIsLoading] = useState<boolean>(false)
     const [isError, setIsError] = useState<boolean>(false)
@@ -128,6 +131,7 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
         setIsLoading(true)        
 
         try{
+            // Get Epic Detail
             const epicResponse = await axios.get(`http://localhost:8080/epic/getEpic/${currentEpicID}`,{
                 headers : {
                     Authorization: `Bearer ${token}`
@@ -135,6 +139,7 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
             })                
             setCurrentEpicDetails(epicResponse.data)
 
+            // Get List of sprints
             const sprintsResponse = await axios.get(`http://localhost:8080/sprint/getSprints/${currentEpicID}`,{
                 headers : {
                     Authorization: `Bearer ${token}`
@@ -144,6 +149,7 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
                 setSprintList(sprintsResponse.data)
             }     
 
+            // Get Permission of user for the EPIC
             const epicPermsResponse = await axios.get(`http://localhost:8080/epic/getEpicPerms/${currentEpicID}`,{
                 headers : {
                     Authorization: `Bearer ${token}`
@@ -153,6 +159,7 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
                 setEpicPerms(epicPermsResponse.data)
             }    
             
+            // Get the list of task accessible by User
             const tasksResponse = await axios.get(`http://localhost:8080/task/GetUserTasks/${currentEpicID}`,{
                 headers : { Authorization : `Bearer ${token}`}
             })
@@ -175,6 +182,18 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
             if(transformedArray !== null ){
                 setTaskList(transformedArray)
             }
+
+            //Get List of Task Perms
+            const taskPermissions = await axios.get(`http://localhost:8080/task/getRolesForTasks/${currentEpicID}`,{
+                headers:{
+                    Authorization: `Bearer ${token}`
+                }
+            })
+            if(taskPermissions.data!== null){
+                setTaskRoles(taskPermissions.data)
+            }
+
+
         }catch(err : any){
             setIsError(true)
             console.log(err)
@@ -243,8 +262,28 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
         }
     },[currentEpicID])   
 
+    const addMemberToTask = useCallback(async(taskId:string,email:string,role:string) =>{
+        try{
+            const addMemberResponse = await axios.post(`http://localhost:8080/task/addMemberToTask`,{
+                "epic_id": currentEpicID,
+                "task_id": taskId,
+                "member_email": email,
+                "role_name": role
+            },{
+                headers: {Authorization: `Bearer ${token}`}
+            })
+
+            if(addMemberResponse.status === 200){
+                dispatch(openModal({header:"Add Member",children: <ResultDisplay msg={"Success"}/>}))
+            }
+        }catch(err){
+            dispatch(openModal({header:"Add Member",children: <ResultDisplay msg={"Failure"}/>}))
+            console.log(err)
+        }
+    },[currentEpicID])
+
     return(
-        <epicContext.Provider value={{currentEpicDetails,taskList,epicPerms,setCurrectEpicID,isLoading,sprintList,submitTask,updateTask}}>
+        <epicContext.Provider value={{currentEpicDetails,taskList,epicPerms,taskRoles,setCurrectEpicID,isLoading,sprintList,submitTask,updateTask,addMemberToTask}}>
             {children}
         </epicContext.Provider>
     )
