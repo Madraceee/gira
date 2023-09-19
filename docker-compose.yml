@@ -1,0 +1,23 @@
+version: '3'
+services: 
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+  
+  backend:
+    build: ./backend
+    depends_on:
+      - database
+    ports:
+      - "8080:8080"
+
+  database:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: balkanID
+      
