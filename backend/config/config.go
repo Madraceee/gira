@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -15,12 +14,7 @@ type EnvVars struct {
 
 func LoadEnvVal() (*EnvVars, error) {
 
-	env := os.Getenv("GO_ENV")
-	if env == "production" {
-		fmt.Print("Available")
-	} else {
-		godotenv.Load(".env")
-	}
+	godotenv.Load(".env")
 
 	port := os.Getenv("PORT")
 	if port == "" {
