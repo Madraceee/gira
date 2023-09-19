@@ -21,13 +21,37 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
     // Add member
     const [taskUpdateEmail,setTaskUpdateEmail] = useState<string>("")
     const [taskUpdateSelectedRole,setTaskUpdateSelectedRole] = useState<string>("")
-    const [showMemberAdd,setShowMemberAdd] = useState<boolean>(false)
 
     // Delete Member
     const [taskDeleteEmail,setTaskDeleteEmail] = useState<string>("")
-    const [showMemberDelete, setShowMemberDelete] = useState<boolean>(false)
 
-    const {updateTask,addMemberToTask,deleteMemberFromTask,taskRoles} = useEpic()
+    const [showOptions,setShowOptions] = useState<string>("")
+
+    // Members of Task
+    const [membersOfTask,setMembersOfTask] = useState<{UsersName:string,RoleName: string}[]>([])
+
+    const {updateTask,addMemberToTask,deleteMemberFromTask,taskRoles,toggleReload} = useEpic()
+
+    useEffect(()=>{
+        getTaskMembers(task.TASKID)
+    },[toggleReload])
+
+     // Get Members of Task
+    const getTaskMembers = async(taskID : string)=>{
+        try{
+            const response = await axios.get(`http://localhost:8080/task/getMembersOfTask/${taskID}`,{
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+            })
+
+            if(response.status === 200){
+                setMembersOfTask(response.data)
+            }
+        }catch(err:any){       
+            console.log("Error Fetching members:",err)
+        }
+    }
 
     useEffect(()=>{
         if(task.TASKREQ !== taskReq){
@@ -80,10 +104,10 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
 
         setTaskUpdateEmail("")
         setTaskUpdateSelectedRole(taskRoles[0])
-        setShowMemberAdd(false)
+        setShowOptions("close")
 
         setTaskDeleteEmail("")        
-        setShowMemberDelete(false)
+        setShowOptions("close")
     },[task.TASKID])
 
     const taskFullUpdate = perms.find((perm)=>perm === TaskRoles.UPDATETASKFULL.valueOf()) === undefined ? false : true
@@ -143,11 +167,12 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
                 <p className="w-1/2"><span className={headingStyle}>End Date: </span>{task.TASKENDDATE}</p>
             </div>
             <div className="flex flex-row justify-between gap-2">
-                <button disabled={perms.find((perm=> perm === TaskRoles.ADDMEMBERS.valueOf())) === undefined ? true : false} className={`bg-slate-600 text-white p-1 pl-2 pr-2 rounded-md disabled:cursor-not-allowed`} onClick={()=>{setShowMemberAdd(state=> !state)}}>{showMemberAdd ? "Close" : "Add Member"}</button>
-                <button disabled={perms.find((perm=> perm === TaskRoles.REMOVEMEMBERS.valueOf())) === undefined ? true : false} className={`bg-slate-600 text-white p-1 pl-2 pr-2 rounded-md disabled:cursor-not-allowed`} onClick={()=>{setShowMemberDelete(state=> !state)}}>{showMemberDelete? "Close" : "Delete Member"}</button>
+                <button className={`bg-slate-600 text-white p-1 pl-2 pr-2 rounded-md disabled:cursor-not-allowed ${showOptions!=="close" ? "" : "hidden"}`} onClick={()=>{setShowOptions("close")}}>Close</button>
+                <button disabled={perms.find((perm=> perm === TaskRoles.ADDMEMBERS.valueOf())) === undefined ? true : false} className={`bg-slate-600 text-white p-1 pl-2 pr-2 rounded-md disabled:cursor-not-allowed ${showOptions!=="add" ? "" : "hidden"}`} onClick={()=>{setShowOptions("add")}}>{showOptions!=="add" && "Add Member"}</button>
+                <button disabled={perms.find((perm=> perm === TaskRoles.REMOVEMEMBERS.valueOf())) === undefined ? true : false} className={`bg-slate-600 text-white p-1 pl-2 pr-2 rounded-md disabled:cursor-not-allowed ${showOptions!=="delete" ? "" : "hidden"}`} onClick={()=>{setShowOptions("delete")}}>{showOptions!=="delete" && "Delete Member"}</button>
                 <button disabled={!hasChanged} className="bg-blue-400 text-white p-1 pl-2 pr-2 rounded-md disabled:bg-blue-100" onClick={()=>updateTask(task.TASKID,taskReq,taskLink,taskLog,taskStatus,taskSprintID,perms)}>Save</button>
             </div>
-            { showMemberAdd &&
+            { showOptions==="add" &&
                 <div className="flex flex-row justify-between gap-2 bg-[#d6dbdc]  p-2 rounded-lg">
                     <input type="email" className=" text-black p-1 rounded-md shadow-sm  w-1/2" placeholder="Enter Email to Add" value={taskUpdateEmail} onChange={(e)=>setTaskUpdateEmail(e.target.value)}/>
                     <select onChange={(e)=>setTaskUpdateSelectedRole(e.target.value)} defaultValue={taskUpdateSelectedRole} className="min-w-[100px] text-right pl-2 pr-2 bg-[#d6dbdc] text-black p-1 rounded-md shadow-sm border-black border-2">
@@ -160,10 +185,28 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
                     <button className="bg-green-400 text-white p-1 pl-2 pr-2 rounded-md cursor-pointer" onClick={()=>addMemberToTask(task.TASKID,taskUpdateEmail,taskUpdateSelectedRole)}>Add</button>
                 </div>
             }
-            { showMemberDelete &&
+            { showOptions==="delete" &&
                 <div className="flex flex-row justify-between gap-2 bg-[#d6dbdc]  p-2 rounded-lg">
                     <input type="email" className=" text-black p-1 rounded-md shadow-sm  w-1/2" placeholder="Enter Email to Remove" value={taskDeleteEmail} onChange={(e)=>setTaskDeleteEmail(e.target.value)}/>
                     <button className="bg-red-400 text-white p-1 pl-2 pr-2 rounded-md cursor-pointer" onClick={()=>deleteMemberFromTask(task.TASKID,taskDeleteEmail)}>Remove</button>
+                </div>
+            }
+            {
+                membersOfTask.length > 0 && 
+                <div className="flex flex-col justify-between gap-2 bg-[#d6dbdc]  p-2 rounded-lg">
+                    <div className="w-full flex flex-row justify-between text-xl font-bold border-b-2 border-black">
+                        <span>Name</span>
+                        <span>Role</span>
+                    </div>
+                    {
+                    membersOfTask.map((member,index)=>{return(
+                        <div className="flex flex-row justify-between gap-2 bg-[#d6dbdc]  p-2 rounded-lg" key={index}>
+                            <span>{member.UsersName}</span>
+                            <span>{member.RoleName}</span>
+                        </div>
+                    )})
+                    }
+                    
                 </div>
             }
             

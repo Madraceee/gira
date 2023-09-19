@@ -552,3 +552,23 @@ func (taskCfg *TaskConfig) CreateTaskRole(w http.ResponseWriter, r *http.Request
 	utils.RespondWithJSON(w, http.StatusOK, "Success")
 	return
 }
+
+func (taskCfg *TaskConfig) GetMembersOfTask(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+
+	taskId := chi.URLParam(r, "taskID")
+
+	parsedID, err := uuid.Parse(taskId)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid ID")
+		return
+	}
+
+	records, err := taskCfg.DB.GetMembersOfTask(r.Context(), parsedID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Task Does not exist")
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, records)
+	return
+}

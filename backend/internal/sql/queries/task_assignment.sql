@@ -26,3 +26,7 @@ ORDER BY task_start_date ASC;
 -- name: CheckUserTaskMappingExists :one
 SELECT * FROM task_assignment
 WHERE task_assignment_epic_id=$1 AND task_assignment_task_id=$2 AND task_assignment_users_id=$3;
+
+-- name: GetMembersOfTask :many
+SELECT u.users_name,r.role_name FROM users u, role r, task_assignment t
+WHERE task_assignment_epic_id=role_epic_id AND role_id=task_assignment_role_id AND task_assignment_users_id=users_id AND task_assignment_task_id=$1;

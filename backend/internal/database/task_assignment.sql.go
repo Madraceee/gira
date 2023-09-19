@@ -91,11 +91,45 @@ func (q *Queries) DeleteUserFromTask(ctx context.Context, arg DeleteUserFromTask
 	return err
 }
 
+const getMembersOfTask = `-- name: GetMembersOfTask :many
+SELECT u.users_name,r.role_name FROM users u, role r, task_assignment t
+WHERE task_assignment_epic_id=role_epic_id AND role_id=task_assignment_role_id AND task_assignment_users_id=users_id AND task_assignment_task_id=$1
+`
+
+type GetMembersOfTaskRow struct {
+	UsersName string
+	RoleName  string
+}
+
+func (q *Queries) GetMembersOfTask(ctx context.Context, taskAssignmentTaskID uuid.UUID) ([]GetMembersOfTaskRow, error) {
+	rows, err := q.db.QueryContext(ctx, getMembersOfTask, taskAssignmentTaskID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetMembersOfTaskRow
+	for rows.Next() {
+		var i GetMembersOfTaskRow
+		if err := rows.Scan(&i.UsersName, &i.RoleName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUsersTask = `-- name: GetUsersTask :many
 SELECT task_id,task_name,task_req,task_log,task_link,task_start_date,task_end_date,task_status,task_sprint_id FROM task
 JOIN task_assignment
 ON task_assignment_epic_id=task_epic_id AND task_id=task_assignment_task_id
 WHERE task_epic_id=$1 AND task_assignment_users_id=$2
+ORDER BY task_start_date ASC
 `
 
 type GetUsersTaskParams struct {

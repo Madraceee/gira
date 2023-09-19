@@ -81,6 +81,7 @@ SELECT sprint_id, sprint_start_date, sprint_end_date FROM sprint
 JOIN epic_members
 ON sprint_epic_id = epic_members_epic_id
 WHERE epic_members_epic_id=$1 AND epic_members_user_id=$2
+ORDER BY sprint_start_date
 `
 
 type GetSprintsOfEpicParams struct {

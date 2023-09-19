@@ -105,6 +105,7 @@ export type EpicInterface = {
     deleteMemberFromTask : (taskId:string,email:string) => Promise<void>,
     addSprint: (startDate : string,endDate:string)=>Promise<void>
     deleteSprint: (sprintID : number )=>Promise<void>
+    toggleReload : boolean
 }
 
 
@@ -253,9 +254,7 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
     },[currentEpicID]);
 
 
-    const updateTask = useCallback(async(taskId : string,req : string,link : string,log : string,status : string,sprintId: string,perms: number[])=>{
-        
-        
+    const updateTask = useCallback(async(taskId : string,req : string,link : string,log : string,status : string,sprintId: string,perms: number[])=>{        
         try{
             if (perms.find(perm => perm === TaskRoles.UPDATETASKFULL.valueOf())){
                 const updateResponse = await axios.patch("http://localhost:8080/task/updateTaskFull",{
@@ -308,6 +307,7 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
 
             if(addMemberResponse.status === 200){
                 dispatch(openModal({header:"Add Member",children: <ResultDisplay msg={"Success"}/>}))
+                setToggleReload(state=>!state)
             }
         }catch(err){
             dispatch(openModal({header:"Add Member",children: <ResultDisplay msg={"Failure"}/>}))
@@ -331,6 +331,7 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
 
             if(addMemberResponse.status === 200){
                 dispatch(openModal({header:"Add Member",children: <ResultDisplay msg={"Success"}/>}))
+                setToggleReload(state=>!state)
             }
         }catch(err){
             dispatch(openModal({header:"Add Member",children: <ResultDisplay msg={"Failure"}/>}))
@@ -386,9 +387,8 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
         }
     },[currentEpicID])
 
-
     return(
-        <epicContext.Provider value={{currentEpicDetails,taskList,epicPerms,taskRoles,setCurrectEpicID,isLoading,sprintList,submitTask,updateTask,addMemberToTask,deleteMemberFromTask,addSprint,deleteSprint,setToggleReload}}>
+        <epicContext.Provider value={{currentEpicDetails,taskList,epicPerms,taskRoles,setCurrectEpicID,isLoading,sprintList,toggleReload,submitTask,updateTask,addMemberToTask,deleteMemberFromTask,addSprint,deleteSprint,setToggleReload}}>
             {children}
         </epicContext.Provider>
     )
