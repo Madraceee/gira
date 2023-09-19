@@ -9,6 +9,7 @@ import axios from "axios";
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import CustomRoles from "./CustomRoles";
 
 
 type Member = {
@@ -21,14 +22,14 @@ export default function Page(){
     const router = useRouter();
     const token = useSelector((state:RootState)=>state.user.token)
     const email = useSelector((state:RootState)=>state.user.email)
-    const {currentEpicDetails,epicPerms,sprintList,addSprint,deleteSprint} = useEpic();
+    const userId = useSelector((state:RootState)=>state.user.id)
+    const {currentEpicDetails,epicPerms,sprintList,addSprint,deleteSprint,setToggleReload} = useEpic();
 
     const [memberEmail,setMemberEmail] = useState<string>("")
     const [membersList,setMembersList] = useState<Member[]>([])
 
     const [startDate,setStartDate] = useState<Date>(new Date())
     const [endDate,setEndDate] = useState<Date>(new Date())
-
 
     const fetchDetails = async()=>{
         try{
@@ -99,6 +100,7 @@ export default function Page(){
         }       
         
         addSprint(startDate.toISOString(),endDate.toISOString())
+        setToggleReload(state => !state)
     }
 
     useEffect(()=>{
@@ -109,15 +111,17 @@ export default function Page(){
 
     const style = "flex flex-row  w-full items-center m-auto justify-between"
     return(
+        <>
+        <span className="p-2 text-blue-500 underline cursor-pointer" onClick={()=>setToggleReload(state=>!state)}>Reload</span>
         <div className="w-full h-full flex flex-col gap-4 lg:flex-row lg:flex-wrap justify-around">
-            <div className="flex flex-col gap-3 lg:w-5/12 p-2">
+            <div className="flex flex-col gap-3 lg:w-1/2 p-2">
                     <div className={`${style} pl-2 pr-2 mt-5 w-full flex flex-row`}>
                             <span className=" text-2xl font-semibold">Members List</span>
                             <button className="bg-blue-500/50 p-2  rounded-md text-white shadow-lg " onClick={()=>router.push(`/dashboard/epic/${currentEpicDetails.EpicID}`)}>Go To Epic Page</button>
                     </div>
                     {epicPerms.find(perm=>perm===EpicPerms.ADDMEMBER.valueOf()) &&
                         <div className={`${style} gap-5  text-sm md:text-xl bg-white p-2 rounded-md`}>
-                            <input type="email" name="memberEmail" id="memberEmail" placeholder="Enter Email" className="bg-[#d6dbdcd9] p-1 shadow-inner" value={memberEmail} onChange={(e)=>setMemberEmail(e.target.value)}/>
+                            <input type="email" name="memberEmail" id="memberEmail" placeholder="Enter Email" className="bg-[#d6dbdcd9] p-1 shadow-inner w-3/5" value={memberEmail} onChange={(e)=>setMemberEmail(e.target.value)}/>
                             <button className="bg-blue-500/50 p-2  rounded-md text-white shadow-lg " onClick={addMember}>Add Member</button>
                         </div>
                     }        
@@ -138,42 +142,48 @@ export default function Page(){
                         })
                     }
             </div>
-            <div className="flex flex-col gap-3 lg:w-5/12 p-2">
-                    <div className={`${style} pl-2 pr-2 mt-5 w-full flex flex-row`}>
-                            {(epicPerms.find(perm=>perm===EpicPerms.ADDSPRINT.valueOf())===undefined || sprintList.length === 0) &&
-                             <span className=" text-2xl font-semibold">Sprints List</span>
-                            }
+            <div className="flex flex-col gap-3 lg:w-1/2 p-2">
+                <div className={`${style} pl-2 pr-2 mt-5 w-full flex flex-row`}>
+                        {(epicPerms.find(perm=>perm===EpicPerms.ADDSPRINT.valueOf())!==undefined || sprintList.length !== 0) &&
+                            <span className=" text-2xl font-semibold">Sprints List</span>
+                        }
+                </div>
+                {epicPerms.find(perm=>perm===EpicPerms.ADDSPRINT.valueOf()) &&
+                    <div className={`${style} gap-5  text-sm md:text-xl bg-white p-2 rounded-md`}>
+                        <input type="date" name="startDate" id="startDate" value={inputDate(startDate)} onChange={(e)=>setStartDate(new Date(e.target.value))} className="border-2 border-black rounded-md"/>   
+                        <span className="whitespace-nowrap">-&gt;</span>                         
+                        <input type="date" name="endDate" id="endDate" value={inputDate(endDate)} onChange={(e)=>setEndDate(new Date(e.target.value))} className="border-2 border-black rounded-md"/>
+                        <button className="bg-blue-500/50 p-2  rounded-md text-white shadow-lg " onClick={addSprintData}>Add Sprint</button>
                     </div>
-                    {epicPerms.find(perm=>perm===EpicPerms.ADDSPRINT.valueOf()) &&
-                        <div className={`${style} gap-5  text-sm md:text-xl bg-white p-2 rounded-md`}>
-                            <input type="date" name="startDate" id="startDate" value={inputDate(startDate)} onChange={(e)=>setStartDate(new Date(e.target.value))} className="border-2 border-black rounded-md"/>   
-                            <span>-&gt;</span>                         
-                            <input type="date" name="endDate" id="endDate" value={inputDate(endDate)} onChange={(e)=>setEndDate(new Date(e.target.value))} className="border-2 border-black rounded-md"/>
-                            <button className="bg-blue-500/50 p-2  rounded-md text-white shadow-lg " onClick={addSprintData}>Add Sprint</button>
+                }        
+                {sprintList.map((sprint,index)=>{
+                    return (
+                        <div className={`${style} gap-5  text-sm md:text-xl bg-white p-2 rounded-md`} key={index}>
+                            <span>{sprint.SprintID}</span>
+                            <span>{dateToString(sprint.SprintStartDate)}</span>
+                            <span>To</span>
+                            <span>{dateToString(sprint.SprintEndDate)}</span>
+                                {epicPerms.find(perm=>perm===EpicPerms.REMOVESPRINT.valueOf()) &&
+                                    <button onClick={()=>{deleteSprint(sprint.SprintID);setToggleReload(state=>!state)}}>
+                                        <svg viewBox="0 0 15 17.5" height="17.5" width="15" xmlns="http://www.w3.org/2000/svg" className="icon hover:fill-red-500 hover:scale-105 transition-transform ease-in-out">
+                                            <path transform="translate(-2.5 -1.25)" d="M15,18.75H5A1.251,1.251,0,0,1,3.75,17.5V5H2.5V3.75h15V5H16.25V17.5A1.251,1.251,0,0,1,15,18.75ZM5,5V17.5H15V5Zm7.5,10H11.25V7.5H12.5V15ZM8.75,15H7.5V7.5H8.75V15ZM12.5,2.5h-5V1.25h5V2.5Z" id="Fill"></path>
+                                        </svg>
+                                    </button>
+                                }
                         </div>
-                    }        
-                    {sprintList.map((sprint,index)=>{
-                        return (
-                            <div className={`${style} gap-5  text-sm md:text-xl bg-white p-2 rounded-md`} key={index}>
-                                <span>{sprint.SprintID}</span>
-                                <span>{dateToString(sprint.SprintStartDate)}</span>
-                                <span>To</span>
-                                <span>{dateToString(sprint.SprintEndDate)}</span>
-                                    {epicPerms.find(perm=>perm===EpicPerms.REMOVEMEMBER.valueOf()) &&
-                                        <button onClick={()=>deleteSprint(sprint.SprintID)}>
-                                            <svg viewBox="0 0 15 17.5" height="17.5" width="15" xmlns="http://www.w3.org/2000/svg" className="icon hover:fill-red-500 hover:scale-105 transition-transform ease-in-out">
-                                                <path transform="translate(-2.5 -1.25)" d="M15,18.75H5A1.251,1.251,0,0,1,3.75,17.5V5H2.5V3.75h15V5H16.25V17.5A1.251,1.251,0,0,1,15,18.75ZM5,5V17.5H15V5Zm7.5,10H11.25V7.5H12.5V15ZM8.75,15H7.5V7.5H8.75V15ZM12.5,2.5h-5V1.25h5V2.5Z" id="Fill"></path>
-                                            </svg>
-                                        </button>
-                                    }
-                            </div>
-                            )
-                        })
-                    }
+                        )
+                    })
+                }
             </div>
-            <div>
-                Hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
-            </div>
+            {currentEpicDetails.EpicOwner === userId && 
+                <div className="flex flex-col gap-3 w-full p-2">
+                    <span className=" text-lg text-[20px] md:text-[30px] font-bold text-center">Role Settings</span>
+                     <CustomRoles />
+                </div>
+               
+            }
+            
         </div>
+        </>
     )
 }

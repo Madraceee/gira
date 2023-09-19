@@ -20,4 +20,9 @@ WHERE task_assignment_task_id=$1 AND task_assignment_epic_id=$2 AND task_assignm
 SELECT task_id,task_name,task_req,task_log,task_link,task_start_date,task_end_date,task_status,task_sprint_id FROM task
 JOIN task_assignment
 ON task_assignment_epic_id=task_epic_id AND task_id=task_assignment_task_id
-WHERE task_epic_id=$1 AND task_assignment_users_id=$2;
+WHERE task_epic_id=$1 AND task_assignment_users_id=$2
+ORDER BY task_start_date ASC;
+
+-- name: CheckUserTaskMappingExists :one
+SELECT * FROM task_assignment
+WHERE task_assignment_epic_id=$1 AND task_assignment_task_id=$2 AND task_assignment_users_id=$3;

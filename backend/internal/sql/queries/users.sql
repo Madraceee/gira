@@ -13,6 +13,13 @@ UPDATE users
 SET users_account_status='ACTIVE'
 WHERE users_id=$1;
 
+-- name: GetUserStatus :one
+SELECT users_account_status FROM users
+WHERE users_email=$1;
+
+-- name: DeleteAccount :exec
+DELETE FROM users
+WHERE users_id=$1;
 
 -- name: Login :one
 SELECT * FROM users

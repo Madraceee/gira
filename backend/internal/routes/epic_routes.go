@@ -22,4 +22,7 @@ func EpicRoute(r *chi.Mux, conn *sql.DB) {
 	r.Get("/epic/getEpicPerms/{id}", middleware.MiddlewareAuth(epicApi.GetEpicPermissions, epicApi.DB))
 	r.Post("/epic/addMember", middleware.MiddlewareAuth(epicApi.AddMemberToEpic, epicApi.DB))
 	r.Delete("/epic/deleteMember", middleware.MiddlewareAuth(epicApi.DeleteMemberFromEpic, epicApi.DB))
+	r.Post("/epic/addEpicRole", middleware.MiddlewareAuth(epicApi.CreateEpicRole, epicApi.DB))
+	r.Get("/epic/GetAllRolesForEpic/{epicID}", middleware.MiddlewareAuth(epicApi.GetAllRolesForEpic, epicApi.DB))
+	r.Post("/epic/addAssignEpicRoleToUser", middleware.MiddlewareAuth(epicApi.AssignMemberEpicRole, epicApi.DB))
 }

@@ -12,7 +12,7 @@ CREATE TABLE task(
     task_sprint_id int,
     CONSTRAINT task_pk_id PRIMARY KEY (task_epic_id,task_id),
     CONSTRAINT task_fk_epic_id FOREIGN KEY (task_epic_id) REFERENCES epic (epic_id) ON DELETE CASCADE,
-    CONSTRAINT task_check_date CHECK( task_end_date IS NULL OR task_start_date < task_end_date),
+    CONSTRAINT task_check_date CHECK( task_end_date IS NULL OR task_start_date <= task_end_date),
     CONSTRAINT task_check_status CHECK (task_status IN ('NOT STARTED','BUILDING','TESTING','REVIEW','COMPLETED','HALTED'))
 );
 

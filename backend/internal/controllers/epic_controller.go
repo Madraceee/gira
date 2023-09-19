@@ -79,73 +79,41 @@ func (epicCfg *EpicConfig) CreateEpic(w http.ResponseWriter, r *http.Request, us
 
 	// Create Roles
 	// Master Role for EPIC(access to everything)
-	epicRole, err := epicCfg.DB.CreateEpicRole(r.Context(), database.CreateEpicRoleParams{
-		RoleEpicID: epic.EpicID,
-		RoleName:   "MASTER",
-	})
 
-	// Assigning Permissions to MASTER
 	permissions := []int{100, 101, 102, 103, 104, 105}
-	for _, id := range permissions {
-		_, err := epicCfg.DB.EnterPerms(r.Context(), database.EnterPermsParams{
-			RolePermissionRoleID:       epicRole.RoleID,
-			RolePermissionEpicID:       epic.EpicID,
-			RolePermissionPermissionID: int32(id),
-		})
-		if err != nil {
-			continue
-		}
+	roleId, err := service.CreateEpicRole(epic.EpicID, "MASTER", permissions, epicCfg.DB, r.Context())
+
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
+		return
 	}
 
 	// Assign Owner to MASTER role
 	_, err = epicCfg.DB.AssignUserToEpicPerms(r.Context(), database.AssignUserToEpicPermsParams{
 		EpicAssignmentEpicID:  epic.EpicID,
-		EpicAssignmentRoleID:  epicRole.RoleID,
+		EpicAssignmentRoleID:  roleId,
 		EpicAssignmentUsersID: user.Id,
 	})
 
 	// Create Developer and View Role Tasks
 	// For Developer
-	taskRole, err := epicCfg.DB.CreateTaskRole(r.Context(), database.CreateTaskRoleParams{
-		RoleEpicID: epic.EpicID,
-		RoleName:   "Developer",
-	})
-
-	for i := 1; i <= 5; i++ {
-		_, err := epicCfg.DB.EnterPerms(r.Context(), database.EnterPermsParams{
-			RolePermissionRoleID:       taskRole.RoleID,
-			RolePermissionEpicID:       epic.EpicID,
-			RolePermissionPermissionID: int32(i),
-		})
-		if err != nil {
-			continue
-		}
+	developerPerms := []int{1, 2, 3, 4, 5}
+	_, err = service.CreateTaskRole(epic.EpicID, "Developer", developerPerms, epicCfg.DB, r.Context())
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
+		return
 	}
 
-	// For View
-	taskRole, err = epicCfg.DB.CreateTaskRole(r.Context(), database.CreateTaskRoleParams{
-		RoleEpicID: epic.EpicID,
-		RoleName:   "View",
-	})
-	_, err = epicCfg.DB.EnterPerms(r.Context(), database.EnterPermsParams{
-		RolePermissionRoleID:       taskRole.RoleID,
-		RolePermissionEpicID:       epic.EpicID,
-		RolePermissionPermissionID: int32(1),
-	})
-
+	viewPerms := []int{1}
+	_, err = service.CreateTaskRole(epic.EpicID, "View", viewPerms, epicCfg.DB, r.Context())
 	if err != nil {
-		log.Printf("Error while making epic %v", err)
-	}
-
-	if err != nil {
-		utils.RespondWithError(w, 500, "Server Error")
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
 		return
 	}
 
 	utils.RespondWithJSON(w, http.StatusOK, epic)
 }
 
-// Add member to an EPIC
 // Add member to an EPIC
 func (epicCfg *EpicConfig) AddMemberToEpic(w http.ResponseWriter, r *http.Request, user *common.UserData) {
 
@@ -168,6 +136,18 @@ func (epicCfg *EpicConfig) AddMemberToEpic(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// Check whether user is active or not
+	if active, err := isUserActive(params.UserEmail, epicCfg.DB, r.Context()); err == nil {
+		if active == false {
+			utils.RespondWithError(w, http.StatusBadRequest, "User account deactive")
+			return
+		}
+	} else {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Cannot Fetch User Details")
+		return
+	}
+
+	//Fetching Permissions of Initiator
 	perms, err := service.FetchEpicPermissions(params.EpicId, user.Id, epicCfg.DB, r.Context())
 	if err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
@@ -178,12 +158,24 @@ func (epicCfg *EpicConfig) AddMemberToEpic(w http.ResponseWriter, r *http.Reques
 	for _, perm := range perms {
 		if perm == 100 {
 			// Initiator has permission to add
-			epicCfg.DB.InsertEpicMember(r.Context(), database.InsertEpicMemberParams{
+			_, err = epicCfg.DB.InsertEpicMember(r.Context(), database.InsertEpicMemberParams{
 				EpicMembersEpicID: params.EpicId,
 				UsersEmail:        params.UserEmail,
 			})
+
+			if err != nil {
+				utils.RespondWithError(w, http.StatusBadRequest, "User does not exist")
+				return
+			}
+
+			utils.RespondWithJSON(w, http.StatusOK, "Success")
+			return
 		}
 	}
+
+	utils.RespondWithError(w, http.StatusForbidden, "No Permission")
+	return
+
 }
 
 // Delete Member from an EPIC
@@ -219,6 +211,18 @@ func (epicCfg *EpicConfig) DeleteMemberFromEpic(w http.ResponseWriter, r *http.R
 
 	if id == user.Id {
 		utils.RespondWithError(w, http.StatusBadRequest, "Cannot Delete Self")
+		return
+	}
+
+	epic, err := epicCfg.DB.GetEpicFromEpicID(r.Context(), params.EpicId)
+	if err != nil {
+		log.Printf("Cannot fetch Epic: %v", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	if epic.EpicOwner == id {
+		utils.RespondWithError(w, http.StatusForbidden, "Cannot delete epic owner")
 		return
 	}
 
@@ -265,7 +269,7 @@ func (epicCfg *EpicConfig) DeleteEpic(w http.ResponseWriter, r *http.Request, us
 	// Allow only MASTERS to create EPIC
 	role := strings.ToUpper(user.Role)
 	if role != "MASTER" {
-		utils.RespondWithError(w, http.StatusMethodNotAllowed, "Not Authorized to create EPIC")
+		utils.RespondWithError(w, http.StatusMethodNotAllowed, "Not Authorized to delete EPIC")
 	}
 
 	// Input from user to Update an EPIC
@@ -364,5 +368,156 @@ func (epicConfig *EpicConfig) GetEpicPermissions(w http.ResponseWriter, r *http.
 	}
 
 	utils.RespondWithJSON(w, http.StatusOK, perms)
+	return
+}
+
+// Add Epic Role
+func (epicCfg *EpicConfig) CreateEpicRole(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+
+	role := strings.ToUpper(user.Role)
+	if role != "MASTER" {
+		utils.RespondWithError(w, http.StatusForbidden, "Not Authorized")
+	}
+
+	type parameter struct {
+		EpicID   uuid.UUID `json:"epic_id"`
+		RoleName string    `json:"role_name"`
+		Perms    []int     `json:"perms"`
+	}
+
+	params := parameter{}
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&params)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Wrong Input")
+		return
+	}
+
+	// Checking whether user is PART of epic, and USER should have MASTER role to add Perms
+	_, err = epicCfg.DB.CheckMemberInEpic(r.Context(), database.CheckMemberInEpicParams{
+		EpicMembersEpicID: params.EpicID,
+		EpicMembersUserID: user.Id,
+	})
+
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "User not Owner of Epic")
+		return
+	}
+
+	for _, id := range params.Perms {
+		if id < 100 || id > 105 {
+			utils.RespondWithError(w, http.StatusBadRequest, "Invalid Permissions")
+			return
+		}
+	}
+
+	_, err = service.CreateEpicRole(params.EpicID, params.RoleName, params.Perms, epicCfg.DB, r.Context())
+	if err != nil {
+		log.Printf("Cannot create Role : %v", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Cannot create Role")
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, "Success")
+	return
+}
+
+func (epicCfg *EpicConfig) GetAllRolesForEpic(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+
+	epicID := chi.URLParam(r, "epicID")
+	parsedEpicID, err := uuid.Parse(epicID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Wrong ID")
+		return
+	}
+
+	roles, err := epicCfg.DB.GetRolesForEpic(r.Context(), parsedEpicID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Wrong ID")
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, roles)
+}
+
+// Assign Epic role to member
+func (epicCfg *EpicConfig) AssignMemberEpicRole(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+
+	role := strings.ToUpper(user.Role)
+	if role != "MASTER" {
+		utils.RespondWithError(w, http.StatusForbidden, "Not Authorized")
+	}
+
+	type parameter struct {
+		EpicID      uuid.UUID `json:"epic_id"`
+		RoleName    string    `json:"role_name"`
+		MemberEmail string    `json:"member_email"`
+	}
+
+	params := parameter{}
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&params)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Wrong Input")
+		return
+	}
+
+	// Checking whether user is PART of epic, and USER should have MASTER role to add Perms
+	_, err = epicCfg.DB.CheckMemberInEpic(r.Context(), database.CheckMemberInEpicParams{
+		EpicMembersEpicID: params.EpicID,
+		EpicMembersUserID: user.Id,
+	})
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "User not Owner of Epic")
+		return
+	}
+
+	// Check whether user is active or not
+	if active, err := isUserActive(params.MemberEmail, epicCfg.DB, r.Context()); err == nil {
+		if active == false {
+			utils.RespondWithError(w, http.StatusBadRequest, "User account deactive")
+			return
+		}
+	} else {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Cannot Fetch User Details")
+		return
+	}
+
+	//Check Whether Member is part of Epic
+	memberID, err := epicCfg.DB.GetIDFromEmail(r.Context(), params.MemberEmail)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "User does not exist")
+		return
+	}
+
+	_, err = epicCfg.DB.CheckMemberInEpic(r.Context(), database.CheckMemberInEpicParams{
+		EpicMembersEpicID: params.EpicID,
+		EpicMembersUserID: memberID,
+	})
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "User not part of Epic")
+		return
+	}
+
+	roleId, err := epicCfg.DB.GetRoleIDFromRoleName(r.Context(), database.GetRoleIDFromRoleNameParams{
+		RoleEpicID: params.EpicID,
+		RoleName:   params.RoleName,
+	})
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Wrong role")
+		return
+	}
+
+	_, err = epicCfg.DB.AssignUserToEpicPerms(r.Context(), database.AssignUserToEpicPermsParams{
+		EpicAssignmentEpicID:  params.EpicID,
+		EpicAssignmentRoleID:  roleId,
+		EpicAssignmentUsersID: memberID,
+	})
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Cannot assign Role")
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, "Success")
 	return
 }

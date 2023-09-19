@@ -58,6 +58,11 @@ func (authCfg *AuthConfig) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if user.UsersAccountStatus == "DEACTIVE" {
+		utils.RespondWithError(w, http.StatusBadRequest, "Account is deactive")
+		return
+	}
+
 	// Fetch Existing token
 	// If no token is available, then generate new token
 	user_auth, err := authCfg.DB.GetUserToken(r.Context(), user.UsersID)

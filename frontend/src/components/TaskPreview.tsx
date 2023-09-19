@@ -1,4 +1,5 @@
 import { TaskDetails } from "@/hooks/epic";
+import { dateToString } from "@/utils/helper";
 
 export default function TaskPreview({taskPreview,showTask} : {taskPreview : TaskDetails,showTask: (taskID:string)=>void }){
     let cardColor = "bg-black/20 "
@@ -21,7 +22,7 @@ export default function TaskPreview({taskPreview,showTask} : {taskPreview : Task
             <div className="w-full flex flex-row justify-between items-center">
                 <p className="text-sm w-fit">Status: {taskPreview.TASKSTATUS}</p>
                 <p className="text-sm w-fit" >{taskPreview.TASKSPRINTID !== "" && `Sprint: ${taskPreview.TASKSPRINTID}`}</p>
-                <p className="text-sm w-fit">{taskPreview.TASKENDDATE !== "" && `End Date: ${taskPreview.TASKENDDATE}`}</p>
+                <p className="text-sm w-fit">{taskPreview.TASKENDDATE !== "" && `End Date: ${taskPreview.TASKENDDATE}`}</p> 
             </div>
             
         </div>

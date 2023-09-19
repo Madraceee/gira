@@ -74,6 +74,34 @@ func (q *Queries) GetRoleIDFromRoleName(ctx context.Context, arg GetRoleIDFromRo
 	return role_id, err
 }
 
+const getRolesForEpic = `-- name: GetRolesForEpic :many
+SELECT role_name FROM role
+WHERE role_epic_id=$1 AND role_category='EPIC' AND role_name!='MASTER'
+`
+
+func (q *Queries) GetRolesForEpic(ctx context.Context, roleEpicID uuid.UUID) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, getRolesForEpic, roleEpicID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var role_name string
+		if err := rows.Scan(&role_name); err != nil {
+			return nil, err
+		}
+		items = append(items, role_name)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRolesForTasksForEpic = `-- name: GetRolesForTasksForEpic :many
 SELECT role_name FROM role
 WHERE role_epic_id=$1 AND role_category='TASK'

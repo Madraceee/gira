@@ -43,6 +43,29 @@ func (q *Queries) AddUserToTask(ctx context.Context, arg AddUserToTaskParams) (T
 	return i, err
 }
 
+const checkUserTaskMappingExists = `-- name: CheckUserTaskMappingExists :one
+SELECT task_assignment_task_id, task_assignment_epic_id, task_assignment_users_id, task_assignment_role_id FROM task_assignment
+WHERE task_assignment_epic_id=$1 AND task_assignment_task_id=$2 AND task_assignment_users_id=$3
+`
+
+type CheckUserTaskMappingExistsParams struct {
+	TaskAssignmentEpicID  uuid.UUID
+	TaskAssignmentTaskID  uuid.UUID
+	TaskAssignmentUsersID uuid.UUID
+}
+
+func (q *Queries) CheckUserTaskMappingExists(ctx context.Context, arg CheckUserTaskMappingExistsParams) (TaskAssignment, error) {
+	row := q.db.QueryRowContext(ctx, checkUserTaskMappingExists, arg.TaskAssignmentEpicID, arg.TaskAssignmentTaskID, arg.TaskAssignmentUsersID)
+	var i TaskAssignment
+	err := row.Scan(
+		&i.TaskAssignmentTaskID,
+		&i.TaskAssignmentEpicID,
+		&i.TaskAssignmentUsersID,
+		&i.TaskAssignmentRoleID,
+	)
+	return i, err
+}
+
 const deleteUserFromAllTask = `-- name: DeleteUserFromAllTask :exec
 DELETE FROM task_assignment
 WHERE task_assignment_users_id=$1

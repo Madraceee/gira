@@ -117,7 +117,7 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
             </div>
             
             <p className="w-full flex items-center gap-1"><span className={headingStyle}>Status: </span>
-                <select onChange={(e)=>setTaskStatus(e.target.value)} value={taskStatus} disabled={!taskFullUpdate || !taskStatusUpdate} className="bg-[#d6dbdc] text-black p-1 rounded-md shadow-sm">
+                <select onChange={(e)=>setTaskStatus(e.target.value)} value={taskStatus} disabled={!taskFullUpdate && !taskStatusUpdate} className="bg-[#d6dbdc] text-black p-1 rounded-md shadow-sm">
                     <option value="NOT STARTED" >NOT STARTED</option>
                     <option value="BUILDING" >BUILDING</option>
                     <option value="TESTING" >TESTING</option>
@@ -145,7 +145,7 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
             <div className="flex flex-row justify-between gap-2">
                 <button disabled={perms.find((perm=> perm === TaskRoles.ADDMEMBERS.valueOf())) === undefined ? true : false} className={`bg-slate-600 text-white p-1 pl-2 pr-2 rounded-md disabled:cursor-not-allowed`} onClick={()=>{setShowMemberAdd(state=> !state)}}>{showMemberAdd ? "Close" : "Add Member"}</button>
                 <button disabled={perms.find((perm=> perm === TaskRoles.REMOVEMEMBERS.valueOf())) === undefined ? true : false} className={`bg-slate-600 text-white p-1 pl-2 pr-2 rounded-md disabled:cursor-not-allowed`} onClick={()=>{setShowMemberDelete(state=> !state)}}>{showMemberDelete? "Close" : "Delete Member"}</button>
-                <button disabled={!hasChanged} className="bg-blue-400 text-white p-1 pl-2 pr-2 rounded-md disabled:bg-blue-100" onClick={()=>updateTask(task.TASKID,taskReq,taskLink,taskLog,taskStatus,taskSprintID)}>Save</button>
+                <button disabled={!hasChanged} className="bg-blue-400 text-white p-1 pl-2 pr-2 rounded-md disabled:bg-blue-100" onClick={()=>updateTask(task.TASKID,taskReq,taskLink,taskLog,taskStatus,taskSprintID,perms)}>Save</button>
             </div>
             { showMemberAdd &&
                 <div className="flex flex-row justify-between gap-2 bg-[#d6dbdc]  p-2 rounded-lg">

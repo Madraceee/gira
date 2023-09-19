@@ -23,7 +23,7 @@ function YourComponent() {
     const token = useSelector((state:RootState)=>state.user.token)
 
     const submitEpic = async()=>{
-        const pattern = /^[a-zA-Z0-9\s.,'"!?()\-]+$/;
+        const pattern = /^((http|https):\/\/)?[a-zA-Z0-9\s.,'"!?()\/\-]+$/;
 
         if(pattern.test(epicName) && pattern.test(epicDesc) && pattern.test(epicFeatures) && pattern.test(epicLink)){
             try{

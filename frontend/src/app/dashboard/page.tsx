@@ -20,32 +20,35 @@ export default function Page(){
 
     const [epics,setEpics] = useState<EpicPreviewType[]>([] as EpicPreviewType[])
     const router = useRouter()
+
+    const getEpics = async()=>{
+        try{
+            const response = await axios.get("http://localhost:8080/epic/getUserEpics",{
+                headers:{
+                    "Authorization" : `Bearer ${token}`
+                }
+            })
+
+            if(response.data !== null){
+                setEpics(response.data)
+            }
+
+        }catch(err:any){
+            if(err.response){
+                console.log(err.response.status)
+            }
+            else{
+                alert("Server Error pls try again later")
+            }
+        }
+    }
+
     // Check loggin then get epics
     useEffect(()=>{
         if(isLoggedIn === false){
             router.push("/")
         }       
-        const getEpics = async()=>{
-            try{
-                const response = await axios.get("http://localhost:8080/epic/getUserEpics",{
-                    headers:{
-                        "Authorization" : `Bearer ${token}`
-                    }
-                })
-
-                if(response.data !== null){
-                    setEpics(response.data)
-                }
-
-            }catch(err:any){
-                if(err.response){
-                    console.log(err.response.status)
-                }
-                else{
-                    alert("Server Error pls try again later")
-                }
-            }
-        }
+        
         getEpics() 
     },[])
 
@@ -62,12 +65,15 @@ export default function Page(){
                 })}
             
                 {role === "MASTER" && 
-                    <div className={`${epicBoxDesign} flex justify-center items-center `}>
-                        <p className="w-full text-center text-2xl" onClick={()=>router.push("/dashboard/epic/createEpic")}>+ Create Epic</p>
+                    <div className={`${epicBoxDesign} flex justify-center items-center `} onClick={()=>router.push("/dashboard/epic/createEpic")}>
+                        <p className="w-full text-center text-2xl" >+ Create Epic</p>
                     </div>
                 }                
                 { role === "MEMBER" && epics.length === 0 &&
-                    <p className="w-full text-center text-xl">Looks Empty, Come back after your Scrum Master has added you :)</p>
+                    <>
+                        <p className="w-full text-center text-xl">Looks Empty, Come back after your Scrum Master has added you :)</p>
+                        <p className="text-blue-400 underline" onClick={getEpics}>Reload</p>
+                    </>                    
                 }
             </div>
         </div>

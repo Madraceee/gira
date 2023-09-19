@@ -127,7 +127,7 @@ export default function Page(){
 function UserCreationSuccess({msg} : {msg : string}){
     const dispatch = useDispatch()
     return(
-        <div className="max-w-md flex flex-col h-[100px] p-5 justify-center items-center gap-6">
+        <div className="max-w-full flex flex-col h-[100px] p-5 justify-center items-center gap-6">
             <h1 className="text-white text-center">{msg}</h1>
             <Link href="/login" className="w-full" >
                 <button className="bg-green-400 w-full rounded-md" onClick={()=>dispatch(closeModal())}>

@@ -94,6 +94,17 @@ func (usrCfg *UserConfig) DeactivateAccount(w http.ResponseWriter, r *http.Reque
 
 	utils.RespondWithJSON(w, 200, "Account Deactivated")
 }
+func (usrCfg *UserConfig) DeleteAccount(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+
+	err := usrCfg.DB.DeleteAccount(r.Context(), user.Id)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Cannot Delete account")
+		return
+	}
+
+	utils.RespondWithJSON(w, 200, "Account Deleted")
+
+}
 
 // Get Epic members/users list
 func (usrCfg *UserConfig) GetEpicMembers(w http.ResponseWriter, r *http.Request, user *common.UserData) {

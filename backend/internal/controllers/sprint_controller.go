@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee/internal/common"
@@ -23,11 +22,6 @@ type SprintConfig struct {
 
 // Update RUle
 func (sprintCfg *SprintConfig) CreateSprint(w http.ResponseWriter, r *http.Request, user *common.UserData) {
-	// Allow only MASTERS to create SPRINT
-	role := strings.ToUpper(user.Role)
-	if role != "MASTER" {
-		utils.RespondWithError(w, http.StatusMethodNotAllowed, "Not Authorized to create SPRINT")
-	}
 
 	// Input from user to create an SPRINT
 	type parameters struct {
@@ -44,20 +38,32 @@ func (sprintCfg *SprintConfig) CreateSprint(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Frontend should ensure the fields are set properly else empty string will be created.
-	sprint, err := sprintCfg.DB.CreateSprint(r.Context(), database.CreateSprintParams{
-		SprintEpicID:    params.EpicID,
-		SprintStartDate: params.Start_date,
-		SprintEndDate:   params.End_date,
-	})
-
+	perms, err := service.FetchEpicPermissions(params.EpicID, user.Id, sprintCfg.DB, r.Context())
 	if err != nil {
-		log.Printf("Error while inserting into DB by %v : %v", user.Email, err.Error())
-		utils.RespondWithError(w, http.StatusBadRequest, "Input Error")
+		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
 		return
 	}
 
-	utils.RespondWithJSON(w, 200, sprint)
+	for _, perm := range perms {
+		if perm == 104 {
+			sprint, err := sprintCfg.DB.CreateSprint(r.Context(), database.CreateSprintParams{
+				SprintEpicID:    params.EpicID,
+				SprintStartDate: params.Start_date,
+				SprintEndDate:   params.End_date,
+			})
+
+			if err != nil {
+				log.Printf("Error while creating sprint by %v : %v", user.Email, err.Error())
+				utils.RespondWithError(w, http.StatusBadRequest, "Input Error")
+				return
+			}
+
+			utils.RespondWithJSON(w, 200, sprint)
+			return
+		}
+	}
+
+	utils.RespondWithError(w, http.StatusForbidden, "Forbidden")
 }
 
 func (sprintCfg *SprintConfig) DeleteSprint(w http.ResponseWriter, r *http.Request, user *common.UserData) {

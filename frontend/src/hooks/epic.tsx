@@ -4,7 +4,7 @@ import { openModal } from "@/redux/modal/modalSlice";
 import { RootState } from "@/redux/store";
 import { dateToString } from "@/utils/helper";
 import axios from "axios";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { Dispatch, ReactNode, SetStateAction, createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -98,8 +98,9 @@ export type EpicInterface = {
     isLoading : boolean,
     taskRoles : string[],
     setCurrectEpicID :  Dispatch<SetStateAction<string>>,
+    setToggleReload: Dispatch<SetStateAction<boolean>>,
     submitTask : (taskName: string,taskReq: string, startDate: Date,endDate: Date)=>Promise<void>
-    updateTask: (taskId : string,req : string,link : string,log : string,status : string,sprintId: string)=>Promise<void>,
+    updateTask: (taskId : string,req : string,link : string,log : string,status : string,sprintId: string,perms:number[])=>Promise<void>,
     addMemberToTask: (taskId:string,email:string,role:string) => Promise<void>,
     deleteMemberFromTask : (taskId:string,email:string) => Promise<void>,
     addSprint: (startDate : string,endDate:string)=>Promise<void>
@@ -118,6 +119,7 @@ const epicContext = createContext<EpicInterface>({} as EpicInterface)
 export default function EpicProvider ({ children }: { children: ReactNode }){
     
     const dispatch = useDispatch()
+    const router = useRouter()
     const [currentEpicID,setCurrectEpicID] = useState<string>("");
     const [currentEpicDetails,setCurrentEpicDetails] = useState<EpicDetailsFull>({} as EpicDetailsFull)
     const [taskList,setTaskList] = useState<TaskDetails[]>([] as TaskDetails[])
@@ -126,13 +128,15 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
     const [taskRoles, setTaskRoles] = useState<string[]>([] as string[])
     
     const [isLoading,setIsLoading] = useState<boolean>(false)
-    const [isError, setIsError] = useState<boolean>(false)
+    const [isError,setIsError] = useState<boolean>(false)
+
+    const [toggleReload,setToggleReload] = useState<boolean>(false);
 
     const token = useSelector((state:RootState)=>state.user.token)
 
     const getInfo = async()=>{
         setIsLoading(true)        
-
+        setIsError(false)
         try{
             // Get Epic Detail
             const epicResponse = await axios.get(`http://localhost:8080/epic/getEpic/${currentEpicID}`,{
@@ -167,24 +171,27 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
                 headers : { Authorization : `Bearer ${token}`}
             })
 
-            const transformedArray = tasksResponse.data.map((response : ResponseData) => {
-                const sprint = response.TaskSprintID.Valid ? response.TaskSprintID.Int32.toString() : ""
-                const endDate = response.TaskEndDate.Valid ? dateToString(response.TaskEndDate.Time) : ""
-                return {
-                    TASKID: response.TaskID,
-                    TASKNAME: response.TaskName,
-                    TASKREQ: response.TaskReq,
-                    TASKLINK: response.TaskLink.String,
-                    TASKLOG: response.TaskLog.String,
-                    TASKSTATUS: response.TaskStatus,
-                    TASKSPRINTID: sprint,
-                    TASKSTARTDATE: dateToString(response.TaskStartDate),
-                    TASKENDDATE: endDate,
-                  };
-            })
-            if(transformedArray !== null ){
-                setTaskList(transformedArray)
+            if(tasksResponse.data!==null){
+                const transformedArray = tasksResponse.data.map((response : ResponseData) => {
+                    const sprint = response.TaskSprintID.Valid ? response.TaskSprintID.Int32.toString() : ""
+                    const endDate = response.TaskEndDate.Valid ? dateToString(response.TaskEndDate.Time) : ""
+                    return {
+                        TASKID: response.TaskID,
+                        TASKNAME: response.TaskName,
+                        TASKREQ: response.TaskReq,
+                        TASKLINK: response.TaskLink.String,
+                        TASKLOG: response.TaskLog.String,
+                        TASKSTATUS: response.TaskStatus,
+                        TASKSPRINTID: sprint,
+                        TASKSTARTDATE: dateToString(response.TaskStartDate),
+                        TASKENDDATE: endDate,
+                      };
+                })
+                if(transformedArray !== null ){
+                    setTaskList(transformedArray)
+                }
             }
+            
 
             //Get List of Task Perms
             const taskPermissions = await axios.get(`http://localhost:8080/task/getRolesForTasks/${currentEpicID}`,{
@@ -196,23 +203,27 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
                 setTaskRoles(taskPermissions.data)
             }
 
+            setIsError(false)
 
         }catch(err : any){
             setIsError(true)
             console.log(err)
         }
         setIsLoading(false)
-
-
     }
 
     useEffect(()=>{
         if(currentEpicID === ""){
             return
         }
-        console.log("Epic Provider",currentEpicID)
         getInfo()
-    },[currentEpicID])
+    },[currentEpicID,toggleReload])
+
+    useEffect(()=>{
+        if(isError == true){
+            router.push("/dashboard")
+        }
+    },[isError])
 
 
     const submitTask = useCallback(async(taskName: string,taskReq: string, startDate: Date,endDate: Date)=>{
@@ -242,23 +253,41 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
     },[currentEpicID]);
 
 
-    const updateTask = useCallback(async(taskId : string,req : string,link : string,log : string,status : string,sprintId: string)=>{
+    const updateTask = useCallback(async(taskId : string,req : string,link : string,log : string,status : string,sprintId: string,perms: number[])=>{
+        
+        
         try{
-            const updateResponse = await axios.patch("http://localhost:8080/task/updateTaskFull",{
+            if (perms.find(perm => perm === TaskRoles.UPDATETASKFULL.valueOf())){
+                const updateResponse = await axios.patch("http://localhost:8080/task/updateTaskFull",{
                 "epic_id": currentEpicID,
                 "task_id": taskId,
                 "sprint_id": (sprintId === "" ? 0 : parseInt(sprintId)),
                 "link": link,
                 "log": log,
                 "status": status
-            },{
-                headers : {Authorization: `Bearer ${token}`}
-            });
+                },{
+                    headers : {Authorization: `Bearer ${token}`}
+                });
 
-            if(updateResponse.status === 200){
-                dispatch(openModal({header:"",children:<ResultDisplay msg={"Success"}/>}))
-                getInfo()
+                if(updateResponse.status === 200){
+                    dispatch(openModal({header:"",children:<ResultDisplay msg={"Success"}/>}))
+                    getInfo()
+                }
+            }else if(perms.find(perm => perm === TaskRoles.UPDATESTATUS.valueOf())){
+                const updateResponse = await axios.patch("http://localhost:8080/task/updateStatus",{
+                    "epic_id": currentEpicID,
+                    "task_id": taskId,
+                    "status": status
+                    },{
+                        headers : {Authorization: `Bearer ${token}`}
+                });
+
+                if(updateResponse.status === 200){
+                    dispatch(openModal({header:"",children:<ResultDisplay msg={"Success"}/>}))
+                    getInfo()
+                }
             }
+            
         }catch(err:any){
             dispatch(openModal({header:"",children:<ResultDisplay msg={"Failure"}/>}))
             console.log(err)
@@ -291,6 +320,7 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
         try{
             const addMemberResponse = await axios.delete(`http://localhost:8080/task/deleteMemberFromTask`,{
                 data:{
+                    "epic_id": currentEpicID,
                     "task_id": taskId,
                     "member_email": email,
                 },
@@ -358,7 +388,7 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
 
 
     return(
-        <epicContext.Provider value={{currentEpicDetails,taskList,epicPerms,taskRoles,setCurrectEpicID,isLoading,sprintList,submitTask,updateTask,addMemberToTask,deleteMemberFromTask,addSprint,deleteSprint}}>
+        <epicContext.Provider value={{currentEpicDetails,taskList,epicPerms,taskRoles,setCurrectEpicID,isLoading,sprintList,submitTask,updateTask,addMemberToTask,deleteMemberFromTask,addSprint,deleteSprint,setToggleReload}}>
             {children}
         </epicContext.Provider>
     )

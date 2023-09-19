@@ -43,7 +43,7 @@ export default function Modal(){
                 isOpen ? ' dialog-bg-in' : '  dialog-bg-out ',
             ])}
         >
-            <div className='bg-[#0d111c] h-fit  rounded-md w-full sm:w-fit lg:w-fit lg:max-w-2xl z-50 border border-dialogBorder shadow-dialogBox' onClick={(event)=>event.stopPropagation()}>
+            <div className='bg-[#0d111c] h-fit  rounded-md w-full sm:max-w-fit z-50 border border-dialogBorder shadow-dialogBox' onClick={(event)=>event.stopPropagation()}>
                 <div className='w-full p-4 flex justify-between text-white mb-2 border-b border-dialogBorder'>
                     <span className='text-xl'>{header}</span>
                     <span className='hover:cursor-pointer flex items-center justify-center' onClick={()=>dispatch(closeModal())}><img className='w-4 h-4' src="/close.png" alt="Close" /></span>

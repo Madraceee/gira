@@ -69,6 +69,16 @@ func (q *Queries) DeactivateAccount(ctx context.Context, usersID uuid.UUID) erro
 	return err
 }
 
+const deleteAccount = `-- name: DeleteAccount :exec
+DELETE FROM users
+WHERE users_id=$1
+`
+
+func (q *Queries) DeleteAccount(ctx context.Context, usersID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteAccount, usersID)
+	return err
+}
+
 const getEpicMembers = `-- name: GetEpicMembers :many
 SELECT users_name,users_email FROM users
 JOIN epic_members
@@ -114,6 +124,18 @@ func (q *Queries) GetIDFromEmail(ctx context.Context, usersEmail string) (uuid.U
 	var users_id uuid.UUID
 	err := row.Scan(&users_id)
 	return users_id, err
+}
+
+const getUserStatus = `-- name: GetUserStatus :one
+SELECT users_account_status FROM users
+WHERE users_email=$1
+`
+
+func (q *Queries) GetUserStatus(ctx context.Context, usersEmail string) (string, error) {
+	row := q.db.QueryRowContext(ctx, getUserStatus, usersEmail)
+	var users_account_status string
+	err := row.Scan(&users_account_status)
+	return users_account_status, err
 }
 
 const login = `-- name: Login :one

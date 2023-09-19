@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Authorization: ApiKey {key}
+// Authorization: Bearer {key}
 func GetAPIKey(headers http.Header) (string, error) {
 	val := headers.Get("Authorization")
 	if val == "" {

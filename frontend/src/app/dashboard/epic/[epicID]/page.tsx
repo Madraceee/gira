@@ -14,7 +14,7 @@ import axios from "axios";
 
 export default function Page({params} : {params : {epicID : string}}){
 
-    const {setCurrectEpicID,currentEpicDetails,taskList,sprintList,epicPerms} = useEpic();
+    const {setCurrectEpicID,currentEpicDetails,taskList,sprintList,epicPerms,setToggleReload} = useEpic();
     const [isDetailsOpen,SetIsDetailsOpen] = useState<boolean>(false);
     const [isTaskEditorOpen,setIsTaskEditorOpen] = useState<boolean>(false);
     const [taskEditorContents, setTaskEditorContents] = useState<TaskEditorType>({} as TaskEditorType);
@@ -62,6 +62,8 @@ export default function Page({params} : {params : {epicID : string}}){
 
     
     return(
+        <>
+        <span className="p-2 text-blue-500 underline cursor-pointer" onClick={()=>setToggleReload(state=>!state)}>Reload</span>
         <div className="w-full h-full flex flex-col gap-4 p-2 pt-5">
             <div className="w-full flex flex-col md:flex-row md:justify-between">
                 <span className="text-2xl md:text-3xl lg:text-5xl font-bold text-center">{currentEpicDetails.EpicName}</span>
@@ -83,9 +85,9 @@ export default function Page({params} : {params : {epicID : string}}){
                 }                             
             </div>            
             <div className="w-full flex flex-col lg:flex-row gap-4 items-center h-fit">
-                <div className="w-full lg:w-1/2 h-3/4 lg:max-h-[700px] bg-white shadow-md rounded-lg p-3">
+                <div className="w-full lg:w-1/2 h-1/2 lg:h-[700px] bg-white shadow-md rounded-lg p-3">
                     <p className="text-2xl font-bold text-center lg:text-left">Task list</p>                    
-                    <div className="flex flex-col max-h-[500px] lg:max-h-[500px] overflow-y-auto gap-1">
+                    <div className="flex flex-col max-h-[500px] lg:max-h-[600px] overflow-y-auto gap-1">
                         {epicPerms.find((perm)=> perm == EpicPerms.ADDTASK.valueOf() ) && 
                             <div className="bg-[#d6dbdcd9] w-full h-fit min-h-20 flex flex-col items-center justify-center text-2xl rounded-lg cursor-pointer" >
                                 <span onClick={()=>setShowAddTask(state=>!state)} className="w-full text-center">{showAddTask ? "-" : "+"}Add Task</span>
@@ -101,7 +103,7 @@ export default function Page({params} : {params : {epicID : string}}){
                         ))}
                     </div>
                 </div>
-                <div className="w-full lg:w-1/2 h-[700px] bg-white flex items-center shadow-md rounded-lg">
+                <div className="w-full lg:w-1/2 min-h-[200px] lg:h-[700px] bg-white flex items-center shadow-md rounded-lg">
                     {isTaskEditorOpen ?
                         <TaskEditor task={taskEditorContents}/> :
                         <p className="w-full text-center">Select Task to preview</p>
@@ -109,7 +111,7 @@ export default function Page({params} : {params : {epicID : string}}){
                     
                 </div>
             </div>
-            <p onClick={()=>setIsTaskEditorOpen((state)=>!state)}>Test</p>
         </div>
+        </>
     )
 }

@@ -1,10 +1,11 @@
 'use client'
-import { closeModal } from "@/redux/modal/modalSlice";
+import { closeModal, openModal } from "@/redux/modal/modalSlice";
 import { RootState } from "@/redux/store";
 import { logout } from "@/redux/user/userSlice";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
+import DisableDeleteAcc from "./DisableDeleteAcc";
 
 export default function UserOptions(){
     const dispatch = useDispatch();
@@ -13,9 +14,9 @@ export default function UserOptions(){
     
     const logoutUser = async()=>{
         
-        axios.post("http://localhost:8080/user/logout",{
+        axios.post("http://localhost:8080/user/logout",{},{
             headers : {
-                Authorization : `Bearer ${token}`
+                "Authorization" : `Bearer ${token}`
             }
         })
         .then(()=>console.log("Logged out"))
@@ -26,11 +27,64 @@ export default function UserOptions(){
         router.push("/")        
     }
 
+    const showDeleteAcc = ()=>{
+        dispatch(openModal({header:"Delete Account",children:<DisableDeleteAcc executeAction={deleteAcc} />}))
+    }
+
+    const showDisableAcc = ()=>{
+        dispatch(openModal({header:"Disable Account",children:<DisableDeleteAcc executeAction={disableAcc} />}))
+    }
+
+    const deleteAcc = async()=>{
+        try{
+            const response = await axios.delete("http://localhost:8080/user/deleteAcc",{
+                headers : {
+                    "Authorization": `Bearer ${token}`
+                }
+            })
+            if(response.status === 200){
+                dispatch(logout())
+                dispatch(closeModal())
+                router.push("/")
+            }
+        }catch(err){
+            console.log(err)
+            alert("Cannot delete acc")
+        }
+    }
+
+    const disableAcc = async()=>{
+        try{
+            const response = await axios.patch("http://localhost:8080/user/deactivateAcc",{},{
+                headers : {
+                    "Authorization": `Bearer ${token}`
+                }
+            })
+            if(response.status === 200){
+                dispatch(logout())
+                dispatch(closeModal())
+                router.push("/")
+            }
+        }catch(err){
+            console.log(err)
+            alert("Cannot delete acc")
+        }
+    }
+
     return(
-        <div className="min-w-[200px] w-full flex flex-col h-[100px] p-5 justify-center items-center gap-6">
-            <button className="bg-red-400 w-full rounded-md pt-3 pb-3" onClick={logoutUser}>
+        <div className="min-w-[200px] w-full flex flex-col h-[150px] p-5 justify-center items-center gap-2">
+            <button className="bg-white w-full rounded-md pt-3 pb-3" onClick={logoutUser}>
                 Logout
-            </button>          
+            </button> 
+            <div className="w-full flex flex-row gap-2">
+                <button className="bg-red-400 w-full rounded-md pt-3 pb-3" onClick={showDisableAcc}>
+                    Disable Account
+                </button> 
+                <button className="bg-red-600 w-full rounded-md pt-3 pb-3" onClick={showDeleteAcc}>
+                    Delete Account
+                </button>                
+            </div>  
+            
         </div>
     )
 }

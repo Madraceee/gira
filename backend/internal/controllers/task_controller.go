@@ -91,6 +91,16 @@ func (taskCfg *TaskConfig) CreateTask(w http.ResponseWriter, r *http.Request, us
 		TaskAssignmentRoleID:  roleId,
 	})
 
+	epic, _ := taskCfg.DB.GetEpicFromEpicID(r.Context(), params.EpicID)
+
+	// Adding Master as Developer as well
+	taskCfg.DB.AddUserToTask(r.Context(), database.AddUserToTaskParams{
+		TaskAssignmentTaskID:  task.TaskID,
+		TaskAssignmentEpicID:  params.EpicID,
+		TaskAssignmentUsersID: epic.EpicOwner,
+		TaskAssignmentRoleID:  roleId,
+	})
+
 	utils.RespondWithJSON(w, http.StatusOK, task)
 }
 
@@ -114,7 +124,7 @@ func (taskCfg *TaskConfig) FetchUsersTask(w http.ResponseWriter, r *http.Request
 			utils.RespondWithJSON(w, http.StatusOK, nil)
 			return
 		}
-		utils.RespondWithError(w, http.StatusInternalServerError, "Malfomed ID")
+		utils.RespondWithError(w, http.StatusBadRequest, "Malfomed ID")
 		return
 	}
 
@@ -142,17 +152,7 @@ func (taskCfg *TaskConfig) FetchTaskPermissions(w http.ResponseWriter, r *http.R
 	return
 }
 
-// Update FRONTEND and Backend
 func (taskCfg *TaskConfig) UpdateTaskStatus(w http.ResponseWriter, r *http.Request, user *common.UserData) {
-	// MASTER can Update Tasks
-	// Assigned Members(Developer and Tester) can also change
-	// Tester can change only from Testing to Review || Building
-	role := strings.ToUpper(user.Role)
-	if role != "MASTER" && true {
-		utils.RespondWithError(w, http.StatusMethodNotAllowed, "Not Authorized to update Task status")
-		return
-	}
-
 	// Parse request parameters
 	type parameters struct {
 		EpicID uuid.UUID `json:"epic_id"`
@@ -168,7 +168,24 @@ func (taskCfg *TaskConfig) UpdateTaskStatus(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Execute the SQL query to update task status
+	perms, err := service.FetchTaskermissions(params.TaskID, user.Id, taskCfg.DB, r.Context())
+	if err != nil {
+		utils.RespondWithError(w, http.StatusForbidden, "Forbidden")
+		return
+	}
+
+	isAllowed := false
+	for _, perm := range perms {
+		if perm == 2 {
+			isAllowed = true
+			break
+		}
+	}
+	if isAllowed == false {
+		utils.RespondWithError(w, http.StatusForbidden, "Forbidden")
+		return
+	}
+
 	updatedTask, err := taskCfg.DB.UpdateTaskStatus(r.Context(), database.UpdateTaskStatusParams{
 		TaskEpicID: params.EpicID,
 		TaskID:     params.TaskID,
@@ -176,7 +193,7 @@ func (taskCfg *TaskConfig) UpdateTaskStatus(w http.ResponseWriter, r *http.Reque
 	})
 
 	if err != nil {
-		log.Printf("Error while updating task status by %v : %v", user.Email, err.Error())
+		log.Printf("Error while updating task by %v : %v", user.Email, err.Error())
 		utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
@@ -307,6 +324,17 @@ func (taskCfg *TaskConfig) AddUserToTask(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
+	// Check whether user is active or not
+	if active, err := isUserActive(params.MemberEmail, taskCfg.DB, r.Context()); err == nil {
+		if active == false {
+			utils.RespondWithError(w, http.StatusBadRequest, "User account deactive")
+			return
+		}
+	} else {
+		utils.RespondWithError(w, http.StatusInternalServerError, "Cannot Fetch User Details")
+		return
+	}
+
 	perms, err := service.FetchTaskermissions(params.TaskID, user.Id, taskCfg.DB, r.Context())
 	if err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
@@ -349,44 +377,51 @@ func (taskCfg *TaskConfig) AddUserToTask(w http.ResponseWriter, r *http.Request,
 	})
 
 	//Check whether record exisits, if so update the record
-	records, err := taskCfg.DB.GetUsersTask(r.Context(), database.GetUsersTaskParams{
-		TaskEpicID:            params.EpicID,
+	_, err = taskCfg.DB.CheckUserTaskMappingExists(r.Context(), database.CheckUserTaskMappingExistsParams{
+		TaskAssignmentEpicID:  params.EpicID,
+		TaskAssignmentTaskID:  params.TaskID,
 		TaskAssignmentUsersID: memberID,
 	})
 
-	if len(records) != 0 {
-		// Record exits , update record
-		err = taskCfg.DB.UpdateUserTask(r.Context(), database.UpdateUserTaskParams{
-			TaskAssignmentTaskID:  params.TaskID,
-			TaskAssignmentEpicID:  params.EpicID,
-			TaskAssignmentUsersID: memberID,
-			TaskAssignmentRoleID:  roleId,
-		})
-		if err != nil {
-			utils.RespondWithError(w, http.StatusBadRequest, "Cannot update Record")
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			// Record does not exist
+			// Adding Member to task_assignment
+			task, err := taskCfg.DB.AddUserToTask(r.Context(), database.AddUserToTaskParams{
+				TaskAssignmentTaskID:  params.TaskID,
+				TaskAssignmentEpicID:  params.EpicID,
+				TaskAssignmentUsersID: memberID,
+				TaskAssignmentRoleID:  roleId,
+			})
+			if err != nil {
+				log.Printf("Cannot assign user to task : %v", err)
+				utils.RespondWithError(w, http.StatusInternalServerError, "Cannot assign user to task")
+				return
+			}
+
+			utils.RespondWithJSON(w, http.StatusOK, task)
+			return
+		} else {
+			utils.RespondWithError(w, http.StatusBadRequest, "Invalid Input")
 			return
 		}
-
-		utils.RespondWithJSON(w, http.StatusOK, "Updated")
-		return
 	}
 
-	// If record does not exist
-	// Adding Member to task_assignment
-	task, err := taskCfg.DB.AddUserToTask(r.Context(), database.AddUserToTaskParams{
+	// Record exits , update record
+	err = taskCfg.DB.UpdateUserTask(r.Context(), database.UpdateUserTaskParams{
 		TaskAssignmentTaskID:  params.TaskID,
 		TaskAssignmentEpicID:  params.EpicID,
 		TaskAssignmentUsersID: memberID,
 		TaskAssignmentRoleID:  roleId,
 	})
 	if err != nil {
-		log.Printf("Cannot assign user to task : %v", err)
-		utils.RespondWithError(w, http.StatusInternalServerError, "Cannot assign user to task")
+		utils.RespondWithError(w, http.StatusBadRequest, "Cannot update Record")
 		return
 	}
 
-	utils.RespondWithJSON(w, http.StatusOK, task)
+	utils.RespondWithJSON(w, http.StatusOK, "Updated")
 	return
+
 }
 
 // Remove Member from task
@@ -394,6 +429,7 @@ func (taskCfg *TaskConfig) AddUserToTask(w http.ResponseWriter, r *http.Request,
 func (taskCfg *TaskConfig) DeleteUserFromTask(w http.ResponseWriter, r *http.Request, user *common.UserData) {
 
 	type parameter struct {
+		EpicID      uuid.UUID `json:"epic_id"`
 		TaskID      uuid.UUID `json:"task_id"`
 		MemberEmail string    `json:"member_email"`
 	}
@@ -425,6 +461,25 @@ func (taskCfg *TaskConfig) DeleteUserFromTask(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	memberId, err := taskCfg.DB.GetIDFromEmail(r.Context(), params.MemberEmail)
+	if err != nil {
+		log.Printf("Cannot fetch memberID from DB:%v", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Server error")
+		return
+	}
+
+	_, err = taskCfg.DB.CheckUserTaskMappingExists(r.Context(), database.CheckUserTaskMappingExistsParams{
+		TaskAssignmentEpicID:  params.EpicID,
+		TaskAssignmentTaskID:  params.TaskID,
+		TaskAssignmentUsersID: memberId,
+	})
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			utils.RespondWithError(w, http.StatusBadRequest, "User does not belong to task")
+			return
+		}
+	}
+
 	// Get Member ID from email
 	memberID, err := taskCfg.DB.GetIDFromEmail(r.Context(), params.MemberEmail)
 	if err != nil {
@@ -440,6 +495,57 @@ func (taskCfg *TaskConfig) DeleteUserFromTask(w http.ResponseWriter, r *http.Req
 	if err != nil {
 		log.Printf("Cannot Delete user from task : %v", err)
 		utils.RespondWithError(w, http.StatusInternalServerError, "Cannot Delete User from task assignment")
+		return
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, "Success")
+	return
+}
+
+// Add Task Role
+func (taskCfg *TaskConfig) CreateTaskRole(w http.ResponseWriter, r *http.Request, user *common.UserData) {
+
+	role := strings.ToUpper(user.Role)
+	if role != "MASTER" {
+		utils.RespondWithError(w, http.StatusForbidden, "Not Authorized")
+	}
+
+	type parameter struct {
+		EpicID   uuid.UUID `json:"epic_id"`
+		RoleName string    `json:"role_name"`
+		Perms    []int     `json:"perms"`
+	}
+
+	params := parameter{}
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&params)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "Wrong Input")
+		return
+	}
+
+	// Checking whether user is PART of epic, and USER should have MASTER role to add Perms
+	_, err = taskCfg.DB.CheckMemberInEpic(r.Context(), database.CheckMemberInEpicParams{
+		EpicMembersEpicID: params.EpicID,
+		EpicMembersUserID: user.Id,
+	})
+
+	if err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "User not Owner of Epic")
+		return
+	}
+
+	for _, id := range params.Perms {
+		if id < 1 || id > 5 {
+			utils.RespondWithError(w, http.StatusBadRequest, "Invalid Permissions")
+			return
+		}
+	}
+
+	_, err = service.CreateTaskRole(params.EpicID, params.RoleName, params.Perms, taskCfg.DB, r.Context())
+	if err != nil {
+		log.Printf("Cannot create Role : %v", err)
+		utils.RespondWithError(w, http.StatusInternalServerError, "Cannot create Role")
 		return
 	}
 

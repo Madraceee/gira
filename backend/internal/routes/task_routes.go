@@ -19,11 +19,9 @@ func TaskRoute(r *chi.Mux, conn *sql.DB) {
 	r.Get("/task/GetUserTasks/{id}", middleware.MiddlewareAuth(usrApi.FetchUsersTask, usrApi.DB))
 	r.Get("/task/getTaskPerms/{taskID}", middleware.MiddlewareAuth(usrApi.FetchTaskPermissions, usrApi.DB))
 	r.Patch("/task/updateTaskFull", middleware.MiddlewareAuth(usrApi.UpdateTaskFull, usrApi.DB))
-	// r.Patch("/task/updateLog", middleware.MiddlewareAuth(usrApi.UpdateTaskLog, usrApi.DB))
-	// r.Patch("/task/updateLink", middleware.MiddlewareAuth(usrApi.UpdateTaskLink, usrApi.DB))
-	// r.Patch("/task/updateEndDate", middleware.MiddlewareAuth(usrApi.UpdateTaskEndDate, usrApi.DB))
 	r.Patch("/task/updateStatus", middleware.MiddlewareAuth(usrApi.UpdateTaskStatus, usrApi.DB))
 	r.Get("/task/getRolesForTasks/{epicID}", middleware.MiddlewareAuth(usrApi.GetAllPermsOfTask, usrApi.DB))
 	r.Post("/task/addMemberToTask", middleware.MiddlewareAuth(usrApi.AddUserToTask, usrApi.DB))
 	r.Delete("/task/deleteMemberFromTask", middleware.MiddlewareAuth(usrApi.DeleteUserFromTask, usrApi.DB))
+	r.Post("/task/addTaskRole", middleware.MiddlewareAuth(usrApi.CreateTaskRole, usrApi.DB))
 }
