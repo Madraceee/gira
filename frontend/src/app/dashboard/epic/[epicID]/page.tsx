@@ -4,13 +4,11 @@ import EpicDetails from "@/components/EpicDetails";
 import TaskInput from "@/components/TaskInput";
 import TaskEditor from "@/components/TaskEditor";
 import TaskPreview from "@/components/TaskPreview";
-import { EpicPerms, SprintDetails, TaskDetails, TaskEditorType, useEpic } from "@/hooks/epic"
-import { openModal } from "@/redux/modal/modalSlice";
+import { EpicPerms, TaskEditorType, useEpic } from "@/hooks/epic"
 import { RootState } from "@/redux/store";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
+import { useSelector } from "react-redux";
 
 export default function Page({params} : {params : {epicID : string}}){
 

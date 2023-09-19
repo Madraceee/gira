@@ -3,7 +3,7 @@
 import ResultDisplay from '@/components/ModalComponents/ResultDisplay';
 import { openModal } from '@/redux/modal/modalSlice';
 import { RootState } from '@/redux/store';
-import { dateToString, inputDate } from '@/utils/helper';
+import { inputDate } from '@/utils/helper';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';

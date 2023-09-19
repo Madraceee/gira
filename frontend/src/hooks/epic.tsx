@@ -248,7 +248,7 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
                 getInfo()
             }
         }catch(err:any){
-            dispatch(openModal({header:"",children:<ResultDisplay msg={"Failure"}/>}))
+            dispatch(openModal({header:"",children:<ResultDisplay msg={err.response.data ? err.response.data.error : "Failure"}/>}))
             console.log(err)
         }      
     },[currentEpicID]);
@@ -288,7 +288,7 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
             }
             
         }catch(err:any){
-            dispatch(openModal({header:"",children:<ResultDisplay msg={"Failure"}/>}))
+            dispatch(openModal({header:"",children:<ResultDisplay msg={err.response.data ? err.response.data.error : "Failure"}/>}))
             console.log(err)
         }
     },[currentEpicID])   
@@ -309,8 +309,8 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
                 dispatch(openModal({header:"Add Member",children: <ResultDisplay msg={"Success"}/>}))
                 setToggleReload(state=>!state)
             }
-        }catch(err){
-            dispatch(openModal({header:"Add Member",children: <ResultDisplay msg={"Failure"}/>}))
+        }catch(err:any){
+            dispatch(openModal({header:"",children:<ResultDisplay msg={err.response.data ? err.response.data.error : "Failure"}/>}))
             console.log(err)
         }
     },[currentEpicID])
@@ -333,8 +333,8 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
                 dispatch(openModal({header:"Add Member",children: <ResultDisplay msg={"Success"}/>}))
                 setToggleReload(state=>!state)
             }
-        }catch(err){
-            dispatch(openModal({header:"Add Member",children: <ResultDisplay msg={"Failure"}/>}))
+        }catch(err:any){
+            dispatch(openModal({header:"",children:<ResultDisplay msg={err.response.data ? err.response.data.error : "Failure"}/>}))
             console.log(err)
         }
     },[currentEpicID])
@@ -356,9 +356,8 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
                 dispatch(openModal({headers: "" , children:<ResultDisplay msg={"Success"}/>})) 
                 getInfo()
             }
-        }catch(err){
-            console.log(err)
-            dispatch(openModal({headers: "" , children:<ResultDisplay msg={"Failure"}/>})) 
+        }catch(err:any){
+            dispatch(openModal({header:"",children:<ResultDisplay msg={err.response.data ? err.response.data.error : "Failure"}/>}))
             return;
         }
     },[currentEpicID])
@@ -380,9 +379,8 @@ export default function EpicProvider ({ children }: { children: ReactNode }){
                     dispatch(openModal({headers: "" , children:<ResultDisplay msg={"Success"}/>})) 
                     getInfo()
                 }
-        }catch(err){
-            console.log(err)
-            dispatch(openModal({headers: "" , children:<ResultDisplay msg={"Failure"}/>})) 
+        }catch(err:any){
+            dispatch(openModal({header:"",children:<ResultDisplay msg={err.response.data ? err.response.data.error : "Failure"}/>}))
             return;
         }
     },[currentEpicID])

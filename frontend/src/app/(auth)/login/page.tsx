@@ -3,7 +3,6 @@ import Loader from "@/components/loader"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useDispatch, useSelector } from 'react-redux'
-import { UserState } from "@/redux/user/userSlice"
 import { login } from "@/redux/user/userSlice"
 import axios from "axios"
 import { useRouter } from "next/navigation"

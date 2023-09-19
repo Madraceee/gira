@@ -1,13 +1,17 @@
+'use client'
 import { TaskEditorType, TaskRoles, useEpic } from "@/hooks/epic";
 import { RootState } from "@/redux/store";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import ContentEditable from "react-contenteditable";
+import ResultDisplay from "./ModalComponents/ResultDisplay";
+import { openModal } from "@/redux/modal/modalSlice";
 
 export default function TaskEditor({task}: {task : TaskEditorType}){
     const taskCopy = task;
 
+    const dispatch = useDispatch()
     const token = useSelector((state:RootState)=>state.user.token)
 
     const [taskReq,setTaskReq] = useState<string>(task.TASKREQ);
@@ -48,7 +52,8 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
             if(response.status === 200){
                 setMembersOfTask(response.data)
             }
-        }catch(err:any){       
+        }catch(err:any){     
+            dispatch(openModal({header:"",children:<ResultDisplay msg={err.response.data ? err.response.data.error : "Failure"}/>}))  
             console.log("Error Fetching members:",err)
         }
     }
@@ -192,7 +197,7 @@ export default function TaskEditor({task}: {task : TaskEditorType}){
                 </div>
             }
             {
-                membersOfTask.length > 0 && 
+                membersOfTask && 
                 <div className="flex flex-col justify-between gap-2 bg-[#d6dbdc]  p-2 rounded-lg">
                     <div className="w-full flex flex-row justify-between text-xl font-bold border-b-2 border-black">
                         <span>Name</span>

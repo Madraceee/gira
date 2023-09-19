@@ -81,11 +81,9 @@ export default function CustomRoles(){
                 setToggleReload(state=>!state)
             }
         }catch(err:any){
-            console.log(err)
-            if(err.response.data){
-                dispatch(openModal({header:"",children:<ResultDisplay msg={err.response.data.error}/>}))
-                return
-            }
+            dispatch(openModal({header:"",children:<ResultDisplay msg={err.response.data ? err.response.data.error : "Failure"}/>}))
+            return
+            
         }
     }
 
@@ -110,11 +108,9 @@ export default function CustomRoles(){
                 fetchEpicRoles()
             }
         }catch(err:any){
-            console.log(err)
-            if(err.response.data){
-                dispatch(openModal({header:"",children:<ResultDisplay msg={err.response.data.error}/>}))
-                return
-            }
+            dispatch(openModal({header:"",children:<ResultDisplay msg={err.response.data ? err.response.data.error : "Failure"}/>}))
+            return
+            
         }
     }
 
@@ -129,7 +125,8 @@ export default function CustomRoles(){
             if(response.status === 200){
                 setEpicRoles(response.data)
             }
-        }catch(err){
+        }catch(err:any){
+            dispatch(openModal({header:"",children:<ResultDisplay msg={err.response.data ? err.response.data.error : "Failure"}/>}))
             console.log(err)
         }
     }
@@ -163,11 +160,7 @@ export default function CustomRoles(){
             }
 
         }catch(err:any){
-            if(err.response.data){
-                dispatch(openModal({header:"",children:<ResultDisplay msg={err.response.data.error}/>}))                
-            }else{
-                dispatch(openModal({header:"",children:<ResultDisplay msg={"Error"}/>}))
-            }
+            dispatch(openModal({header:"",children:<ResultDisplay msg={err.response.data ? err.response.data.error : "Failure"}/>}))
             setMemberEmail("")
             setMemberRole("Select")
             console.log(err)
