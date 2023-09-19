@@ -125,7 +125,7 @@ npm run dev
 ```
 
 ### Backend
-Req: ==https://github.com/pressly/goose==
+Req: https://github.com/pressly/goose
 
 Create a .env file in ./backend
 
