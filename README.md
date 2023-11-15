@@ -4,7 +4,7 @@ To build a task management system to handle user authentication, authorization a
 
 ---
 # Note
-To run , clone the repo https://github.com/BalkanID-University/ssn-chennai-2023-fte-hiring-Madraceee
+To run , clone the repo git@github.com:Madraceee/gira.git
 
 ```
 docker-compose up
