@@ -2,6 +2,8 @@
 # Task Management System (GIRA)
 To build a task management system to handle user authentication, authorization and access management.
 
+Youtube : https://youtu.be/7gSmqpifMhE?si=w6Kj16uWOxy7vrNz
+
 ---
 # Note
 To run , clone the repo git@github.com:Madraceee/gira.git
